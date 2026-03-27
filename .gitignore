@@ -1,0 +1,19 @@
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+*.swp
+*.swo
+
+# Arquivos temporários
+*.tmp
+*.log
+
+# Arquivos de design (não precisam ir para o repo)
+LOGO/*.psd
+
+# Node (caso use servidor local)
+node_modules/

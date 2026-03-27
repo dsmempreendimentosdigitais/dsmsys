@@ -1,0 +1,21 @@
+Para o mercado internacional (especialmente Canadá), o ideal é ter um único GitHub centralizado que funcione como seu "cartão de visitas" profissional. Ter vários perfis dispersos passa uma imagem de falta de organização, o que pode ser um ponto negativo para cargos de gestão de TI.
+Aqui está como estruturar seu GitHub para atrair empresas que pagam em dólar:
+1. Perfil Único e Profissional
+A "Bio" é seu Pitch: Use um título claro em inglês: “AI Product Manager | Systems for Internet Specialist | Building AI-Driven Solutions”.
+Pinned Repositories: O GitHub permite "pinar" até 6 projetos no topo. Escolha os 2 ou 3 sites/projetos de IA que você já está vendendo. Mesmo que o código da aplicação seja privado, crie um repositório público com um README.md impecável, contendo:
+Prints/Vídeos da ferramenta funcionando.
+Explicação do problema que ela resolve.
+Tecnologias usadas (Python, OpenAI API, LangChain, etc.).
+2. O "Truque" para Projetos de Empreendedor
+Se você está criando projetos para vender, provavelmente o código é propriedade intelectual sua e você não quer deixá-lo aberto.
+Como mostrar serviço: Crie um repositório "Case Study" para cada projeto. Nele, você não coloca o código fonte todo, mas coloca a arquitetura do sistema (diagramas) e trechos de código de lógica de IA (como você estruturou os prompts ou o tratamento de dados). Isso prova seu conhecimento técnico sem entregar seu produto de graça.
+3. O que os Canadenses olham no seu GitHub?
+Documentação (README): No Canadá, a comunicação é vital. Um README bem escrito em inglês, explicando o valor de negócio do projeto, vale mais que mil linhas de código sem comentário.
+Consistência: O gráfico de "quadradinhos verdes" (contribuições) mostra que você é um profissional ativo, mesmo que não seja um desenvolvedor full-time.
+Organização de código: Eles avaliam se você segue boas práticas (Clean Code), já que você almeja cargos de gestão.
+4. Como integrar com a sua estratégia (MYHUB + DeepLearning.ai)
+À medida que você for fazendo os cursos de DeepLearning.ai, crie um repositório chamado AI-Studies ou Machine-Learning-Fundamentals.
+Vá subindo os notebooks (arquivos .ipynb) dos seus estudos.
+Isso prova para o recrutador internacional que você tem o Mestrado (MYHUB) e também tem a mão na massa (GitHub).
+Dica Extra: Como seu foco é o Canadá, seu LinkedIn deve estar 100% em inglês e o link do seu GitHub deve estar em destaque no perfil.
+Você já tem os seus projetos atuais de IA documentados com vídeos de demonstração (Loom) ou apenas o código bruto? Para vender planos, o vídeo convence muito mais o cliente e o recrutador.
