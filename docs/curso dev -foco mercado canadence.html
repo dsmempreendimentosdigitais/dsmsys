@@ -1,0 +1,960 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSMSys — Dev Plan 🇨🇦</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3250;
+    --accent: #4f8ef7; --accent2: #7c5cfc; --green: #22c55e; --yellow: #f59e0b;
+    --red: #ef4444; --text: #e2e8f0; --muted: #8892b0; --sidebar-w: 300px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; display: flex; min-height: 100vh; }
+
+  /* LOGIN OVERLAY */
+  #login-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #0a0c14 0%, #111827 50%, #0f1117 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #login-overlay.hidden { display: none; }
+  .login-bg-glow {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  }
+  .login-bg-glow::before {
+    content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%);
+    top: -100px; left: -100px;
+  }
+  .login-bg-glow::after {
+    content: ''; position: absolute; width: 500px; height: 500px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,92,252,0.10) 0%, transparent 70%);
+    bottom: -80px; right: -80px;
+  }
+  .login-card {
+    position: relative; z-index: 1;
+    background: rgba(26,29,39,0.85);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(79,142,247,0.2);
+    border-radius: 20px; padding: 48px 40px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    animation: loginFadeIn 0.5s ease;
+  }
+  @keyframes loginFadeIn {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .login-logo {
+    text-align: center; margin-bottom: 32px;
+  }
+  .login-logo .logo-text {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+  }
+  .login-logo .logo-dsm { color: #fff; }
+  .login-logo .logo-sys { color: var(--accent); }
+  .login-logo p {
+    font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: 0.5px;
+  }
+  .login-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .login-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+  .login-field { margin-bottom: 16px; }
+  .login-field label {
+    display: block; font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .login-field input {
+    width: 100%; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; color: var(--text); font-size: 14px;
+    font-family: 'Inter', sans-serif; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .login-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+  }
+  .login-btn {
+    width: 100%; padding: 13px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-size: 14px; font-weight: 700; font-family: 'Inter', sans-serif;
+    cursor: pointer; margin-top: 8px; transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .login-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(79,142,247,0.35); }
+  .login-btn:active { transform: translateY(0); }
+  .login-error {
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #f87171;
+    margin-top: 12px; display: none; text-align: center;
+  }
+  .login-error.show { display: block; animation: shake 0.3s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+  }
+  .login-badge {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: 24px; font-size: 11px; color: var(--muted);
+  }
+  .login-badge::before { content: '🔒'; font-size: 12px; }
+
+  /* SIDEBAR */
+  #sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); height: 100vh; overflow-y: auto; position: sticky; top: 0; display: flex; flex-direction: column; }
+  #sidebar-header { padding: 20px 16px 12px; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 10; }
+  #sidebar-header h2 { font-size: 14px; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+  #sidebar-header p { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  #progress-bar-wrap { margin-top: 10px; background: var(--border); border-radius: 99px; height: 6px; }
+  #progress-bar { height: 6px; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s; width: 0%; }
+  #progress-label { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .phase-group { border-bottom: 1px solid var(--border); }
+  .phase-label { padding: 10px 16px 6px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none; }
+  .phase-label:hover { color: var(--text); }
+  .phase-label .phase-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .phase-0 .phase-dot { background: #a78bfa; }
+  .phase-1 .phase-dot { background: var(--green); }
+  .phase-2 .phase-dot { background: var(--yellow); }
+  .phase-3 .phase-dot { background: var(--red); }
+  .phase-4 .phase-dot { background: var(--accent); }
+  .nav-item { padding: 8px 16px 8px 28px; font-size: 12px; color: var(--muted); cursor: pointer; border-left: 2px solid transparent; transition: all .15s; line-height: 1.4; }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--surface2); }
+  .nav-item .week-tag { font-size: 9px; background: var(--surface2); border-radius: 3px; padding: 1px 4px; color: var(--muted); margin-left: 4px; }
+  .logout-btn { margin: 12px 16px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 11px; font-family: 'Inter', sans-serif; cursor: pointer; transition: all .15s; text-align: center; }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* MAIN */
+  #main { flex: 1; overflow-y: auto; padding: 40px 48px; max-width: 900px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 28px; }
+  .phase-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; margin-bottom: 12px; }
+  .badge-purple { background: rgba(167,139,250,.15); color: #a78bfa; }
+  .badge-green  { background: rgba(34,197,94,.15);   color: var(--green); }
+  .badge-yellow { background: rgba(245,158,11,.15);  color: var(--yellow); }
+  .badge-red    { background: rgba(239,68,68,.15);   color: var(--red); }
+  .badge-blue   { background: rgba(79,142,247,.15);  color: var(--accent); }
+  .page-header h1 { font-size: 28px; font-weight: 700; line-height: 1.2; }
+  .page-header .subtitle { color: var(--muted); margin-top: 8px; font-size: 14px; line-height: 1.6; }
+  .page-header .meta { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+  .meta-item { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  .meta-item span { color: var(--text); font-weight: 600; }
+  .lesson-table { width: 100%; border-collapse: collapse; margin-bottom: 28px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .lesson-table thead tr { background: var(--surface2); }
+  .lesson-table th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .lesson-table td { padding: 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .lesson-table tr:last-child td { border-bottom: none; }
+  .lesson-table tr:hover td { background: rgba(255,255,255,.02); }
+  .day-row { display: flex; align-items: stretch; }
+  .day-check { display: flex; align-items: flex-start; padding: 16px 14px 16px 14px; border-right: 1px solid var(--border); }
+  .day-num-cell { display: flex; align-items: flex-start; padding: 16px 12px; border-right: 1px solid var(--border); min-width: 50px; }
+  .day-num { width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+  .day-content { flex: 1; padding: 14px 16px; }
+  .lesson-title { font-weight: 700; color: var(--text); font-size: 13px; margin-bottom: 6px; }
+  .lesson-desc { color: var(--muted); font-size: 12.5px; line-height: 1.7; }
+  .lesson-desc code { background: var(--surface); border: 1px solid var(--border); padding: 1px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 11.5px; color: var(--accent); white-space: nowrap; }
+  .lesson-steps { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+  .step { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .step .step-num { width: 18px; height: 18px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+  .lesson-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+  .tag-blue { color: #60a5fa; border-color: rgba(96,165,250,.3); background: rgba(96,165,250,.07); }
+  .tag-green { color: var(--green); border-color: rgba(34,197,94,.3); background: rgba(34,197,94,.07); }
+  .tag-purple { color: #a78bfa; border-color: rgba(167,139,250,.3); background: rgba(167,139,250,.07); }
+  .tag-yellow { color: var(--yellow); border-color: rgba(245,158,11,.3); background: rgba(245,158,11,.07); }
+  .check-btn { width: 22px; height: 22px; border-radius: 5px; border: 2px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; margin-top: 3px; font-size: 13px; font-weight: 900; color: transparent; }
+  .check-btn:hover { border-color: var(--green); }
+  .check-btn.checked { background: var(--green); border-color: var(--green); color: #000; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .resource-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+  .resource-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); transition: all .15s; }
+  .resource-item:hover { border-color: var(--accent); }
+  .resource-icon { font-size: 18px; flex-shrink: 0; }
+  .resource-info { flex: 1; }
+  .resource-title { font-size: 13px; font-weight: 600; }
+  .resource-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .resource-type { font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 600; white-space: nowrap; }
+  .type-video { background: rgba(239,68,68,.15); color: #f87171; }
+  .type-doc { background: rgba(79,142,247,.15); color: var(--accent); }
+  .type-practice { background: rgba(34,197,94,.15); color: var(--green); }
+  .challenge-box { background: linear-gradient(135deg, rgba(124,92,252,.1), rgba(79,142,247,.1)); border: 1px solid rgba(124,92,252,.3); border-radius: 12px; padding: 20px 24px; margin-bottom: 28px; }
+  .challenge-box h3 { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 8px; }
+  .challenge-box p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .challenge-box code { background: var(--surface); padding: 1px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 12px; color: var(--accent); }
+  .note-box { background: rgba(245,158,11,.07); border: 1px solid rgba(245,158,11,.25); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #fcd34d; line-height: 1.6; }
+  .info-box { background: rgba(79,142,247,.07); border: 1px solid rgba(79,142,247,.25); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #93c5fd; line-height: 1.6; }
+  .success-box { background: rgba(34,197,94,.07); border: 1px solid rgba(34,197,94,.25); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #86efac; line-height: 1.6; }
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+  .setup-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .setup-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .setup-card ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .setup-card li { font-size: 12px; color: var(--muted); padding-left: 16px; position: relative; line-height: 1.5; }
+  .setup-card li::before { content: '•'; position: absolute; left: 0; color: var(--accent); }
+  .setup-card li code { background: var(--surface); border: 1px solid var(--border); padding: 0 5px; border-radius: 3px; font-size: 11px; color: var(--accent); font-family: Consolas, monospace; }
+  .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+  .home-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all .2s; }
+  .home-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .home-card .card-phase { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px; }
+  .home-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .home-card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .home-card .card-meta { margin-top: 12px; font-size: 11px; color: var(--muted); }
+  .stack-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
+  .stack-tag { border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; border: 1px solid; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .nav-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-btn:disabled { opacity: .3; cursor: not-allowed; }
+  .nav-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .nav-btn.primary:hover { background: #3a7de0; border-color: #3a7de0; color: #fff; }
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  @media (max-width: 900px) { #sidebar { display: none; } #main { padding: 24px 16px; } .home-grid, .setup-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-bg-glow"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-text"><span class="logo-dsm">DSM</span><span class="logo-sys">SYS</span></div>
+      <p>🇨🇦 Plataforma de Desenvolvimento Profissional</p>
+    </div>
+    <div class="login-title">Bem-vindo de volta</div>
+    <div class="login-sub">Faça login para acessar seu plano de 12 meses para o mercado canadense.</div>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input type="text" id="login-user" placeholder="Digite seu usuário" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="Digite sua senha" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Entrar na Plataforma →</button>
+    <div class="login-error" id="login-error">❌ Usuário ou senha incorretos. Tente novamente.</div>
+    <div class="login-badge">Acesso restrito — DSMSys 2026</div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div id="sidebar-header">
+    <h2>🇨🇦 Dev Plan — Samuel</h2>
+    <p>1h/day · 6 days/week · 12 months</p>
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+    <div id="progress-label">0 tarefas concluídas</div>
+  </div>
+  <div class="phase-group phase-0">
+    <div class="phase-label"><span class="phase-dot"></span>⚙️ SETUP INICIAL</div>
+    <div class="nav-item" onclick="goTo('home')">🏠 Visão Geral</div>
+    <div class="nav-item" onclick="goTo('setup')">⚙️ Setup Completo do VS Code</div>
+  </div>
+  <div class="phase-group phase-1">
+    <div class="phase-label"><span class="phase-dot"></span>🟢 FASE 1 — Foundation (M1–3)</div>
+    <div class="nav-item" onclick="goTo('w1')">Semana 1 — JS Básico <span class="week-tag">M1</span></div>
+    <div class="nav-item" onclick="goTo('w2')">Semana 2 — Arrays &amp; Objetos <span class="week-tag">M1</span></div>
+    <div class="nav-item" onclick="goTo('w3')">Semana 3 — Async JS <span class="week-tag">M1</span></div>
+    <div class="nav-item" onclick="goTo('w4')">Semana 4 — ES6 Avançado <span class="week-tag">M1</span></div>
+    <div class="nav-item" onclick="goTo('w5')">Semana 5 — Git &amp; GitHub <span class="week-tag">M2</span></div>
+    <div class="nav-item" onclick="goTo('w6')">Semana 6 — TypeScript Básico <span class="week-tag">M2</span></div>
+    <div class="nav-item" onclick="goTo('w7')">Semana 7 — TypeScript Intermediário <span class="week-tag">M2</span></div>
+    <div class="nav-item" onclick="goTo('w8')">Semana 8 — HTML + CSS Moderno <span class="week-tag">M2</span></div>
+    <div class="nav-item" onclick="goTo('w9')">Semana 9 — React Básico <span class="week-tag">M3</span></div>
+    <div class="nav-item" onclick="goTo('w10')">Semana 10 — React Hooks <span class="week-tag">M3</span></div>
+    <div class="nav-item" onclick="goTo('w11')">Semana 11 — Router &amp; Forms <span class="week-tag">M3</span></div>
+    <div class="nav-item" onclick="goTo('w12')">Semana 12 — Portfólio v1 🚀 <span class="week-tag">M3</span></div>
+  </div>
+  <div class="phase-group phase-2">
+    <div class="phase-label"><span class="phase-dot"></span>🟡 FASE 2 — Full-Stack (M4–6)</div>
+    <div class="nav-item" onclick="goTo('w13')">Semana 13 — Next.js <span class="week-tag">M4</span></div>
+    <div class="nav-item" onclick="goTo('w14')">Semana 14 — Node.js + Express <span class="week-tag">M4</span></div>
+    <div class="nav-item" onclick="goTo('w15')">Semana 15 — PostgreSQL + Prisma <span class="week-tag">M4</span></div>
+    <div class="nav-item" onclick="goTo('w16')">Semana 16 — Autenticação JWT <span class="week-tag">M4</span></div>
+    <div class="nav-item" onclick="goTo('w17')">Semana 17 — Frontend ↔ Backend <span class="week-tag">M5</span></div>
+    <div class="nav-item" onclick="goTo('w18')">Semana 18 — Clean Code <span class="week-tag">M5</span></div>
+    <div class="nav-item" onclick="goTo('w19')">Semana 19 — Testes <span class="week-tag">M5</span></div>
+    <div class="nav-item" onclick="goTo('w20')">Semana 20 — MongoDB + Redis <span class="week-tag">M5</span></div>
+    <div class="nav-item" onclick="goTo('w21')">Semanas 21–24 — Projeto TaskFlow 🚀 <span class="week-tag">M6</span></div>
+  </div>
+  <div class="phase-group phase-3">
+    <div class="phase-label"><span class="phase-dot"></span>🔴 FASE 3 — Pro Level (M7–9)</div>
+    <div class="nav-item" onclick="goTo('w25')">Semana 25 — Docker <span class="week-tag">M7</span></div>
+    <div class="nav-item" onclick="goTo('w26')">Semana 26 — CI/CD <span class="week-tag">M7</span></div>
+    <div class="nav-item" onclick="goTo('w27')">Semanas 27–28 — AWS <span class="week-tag">M7</span></div>
+    <div class="nav-item" onclick="goTo('w29')">Semanas 29–30 — IA (OpenAI) <span class="week-tag">M8</span></div>
+    <div class="nav-item" onclick="goTo('w31')">Semanas 31–32 — GraphQL <span class="week-tag">M8</span></div>
+    <div class="nav-item" onclick="goTo('w33')">Semanas 33–36 — Projeto HireAI 🚀 <span class="week-tag">M9</span></div>
+  </div>
+  <div class="phase-group phase-4">
+    <div class="phase-label"><span class="phase-dot"></span>🏁 FASE 4 — Mercado (M10–12)</div>
+    <div class="nav-item" onclick="goTo('w37')">Semanas 37–38 — LinkedIn &amp; CV <span class="week-tag">M10</span></div>
+    <div class="nav-item" onclick="goTo('w39')">Semanas 39–40 — Algoritmos <span class="week-tag">M10</span></div>
+    <div class="nav-item" onclick="goTo('w41')">Semanas 41–42 — System Design <span class="week-tag">M11</span></div>
+    <div class="nav-item" onclick="goTo('w43')">Semanas 43–44 — Entrevistas <span class="week-tag">M11</span></div>
+    <div class="nav-item" onclick="goTo('w45')">Semanas 45–48 — Candidaturas 🎯 <span class="week-tag">M12</span></div>
+  </div>
+  <button class="logout-btn" onclick="doLogout()">🚪 Sair da plataforma</button>
+</nav>
+
+<!-- MAIN -->
+<main id="main">
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="page-header">
+    <div class="phase-badge badge-blue">🇨🇦 Mercado Canadense 2026</div>
+    <h1>Seu Plano de 1 Ano, Samuel</h1>
+    <p class="subtitle">De iniciante com base em lógica a desenvolvedor remote-ready para empresas canadenses. 1h/dia · 6 dias/semana · 48 semanas.</p>
+    <div class="meta">
+      <div class="meta-item">🎯 Objetivo: <span>Trabalho remoto para CA</span></div>
+      <div class="meta-item">⏱ Ritmo: <span>1h/dia · 6 dias/semana</span></div>
+      <div class="meta-item">🗓 Duração: <span>12 meses</span></div>
+    </div>
+  </div>
+  <div class="note-box"><strong>📌 Como usar:</strong> Abra este guia em metade da tela. Abra o recurso de estudo na outra metade. Após cada tarefa do dia, marque o ✓. O progresso é salvo no navegador automaticamente.</div>
+  <div class="home-grid">
+    <div class="home-card" onclick="goTo('setup')"><div class="card-phase" style="color:#a78bfa">⚙️ PRÉ-REQUISITO</div><h3>Setup Inicial</h3><p>VS Code, extensões, Node.js, Git — tudo configurado do zero.</p><div class="card-meta">Faça isso ANTES de começar a Fase 1</div></div>
+    <div class="home-card" onclick="goTo('w1')"><div class="card-phase" style="color:var(--green)">🟢 Fase 1 · Meses 1–3</div><h3>Foundation</h3><p>JavaScript, TypeScript, Git, HTML/CSS, React</p><div class="card-meta">12 semanas · ~72h de estudo</div></div>
+    <div class="home-card" onclick="goTo('w13')"><div class="card-phase" style="color:var(--yellow)">🟡 Fase 2 · Meses 4–6</div><h3>Full-Stack</h3><p>Next.js, Node.js, PostgreSQL, Auth, Testes</p><div class="card-meta">9 semanas · projeto: TaskFlow</div></div>
+    <div class="home-card" onclick="goTo('w25')"><div class="card-phase" style="color:var(--red)">🔴 Fase 3 · Meses 7–9</div><h3>Pro Level</h3><p>Docker, AWS, CI/CD, IA, GraphQL</p><div class="card-meta">12 semanas · projeto: HireAI</div></div>
+    <div class="home-card" onclick="goTo('w37')"><div class="card-phase" style="color:var(--accent)">🏁 Fase 4 · Meses 10–12</div><h3>Mercado</h3><p>LinkedIn, CV, Algoritmos, Entrevistas, Candidaturas</p><div class="card-meta">12 semanas · alvo: vagas remotas CA</div></div>
+  </div>
+  <div class="section-title">🛠 Stack alvo ao final do ano</div>
+  <div class="stack-tags">
+    <span class="stack-tag" style="color:#3b82f6;border-color:#3b82f6">TypeScript</span>
+    <span class="stack-tag" style="color:#61dafb;border-color:#61dafb">React</span>
+    <span class="stack-tag" style="color:#e2e8f0;border-color:#555">Next.js</span>
+    <span class="stack-tag" style="color:#68a063;border-color:#68a063">Node.js</span>
+    <span class="stack-tag" style="color:#336791;border-color:#336791">PostgreSQL</span>
+    <span class="stack-tag" style="color:#4db33d;border-color:#4db33d">MongoDB</span>
+    <span class="stack-tag" style="color:#2496ed;border-color:#2496ed">Docker</span>
+    <span class="stack-tag" style="color:#ff9900;border-color:#ff9900">AWS</span>
+    <span class="stack-tag" style="color:#22c55e;border-color:#22c55e">Jest</span>
+    <span class="stack-tag" style="color:#7c5cfc;border-color:#7c5cfc">OpenAI</span>
+    <span class="stack-tag" style="color:#e535ab;border-color:#e535ab">GraphQL</span>
+    <span class="stack-tag" style="color:#f05032;border-color:#f05032">Git</span>
+  </div>
+  <div class="page-nav">
+    <button class="nav-btn" disabled>← Anterior</button>
+    <button class="nav-btn primary" onclick="goTo('setup')">Começar: Setup ⚙️ →</button>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div class="page" id="page-setup">
+  <div class="page-header">
+    <div class="phase-badge badge-purple">⚙️ Pré-requisito</div>
+    <h1>Setup Inicial Completo</h1>
+    <p class="subtitle">Configure tudo antes de começar. Um ambiente mal configurado vai te atrasar nas próximas 48 semanas. Invista 1 tarde nisso agora.</p>
+    <div class="meta"><div class="meta-item">⏱ Tempo estimado: <span>2–3 horas</span></div></div>
+  </div>
+  <div class="note-box"><strong>⚠️ Importante:</strong> Siga a ordem abaixo. Cada item depende do anterior.</div>
+  <table class="lesson-table">
+    <thead><tr><th style="width:42px">✓</th><th style="width:50px">#</th><th style="width:220px">O que instalar</th><th>Passo a passo</th></tr></thead>
+    <tbody>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'s1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Node.js</div><div class="lesson-tags"><span class="tag tag-green">Obrigatório</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Acesse <strong>nodejs.org</strong> e baixe a versão <strong>LTS</strong></span></div><div class="step"><span class="step-num">2</span><span>Instale normalmente (next, next, finish)</span></div><div class="step"><span class="step-num">3</span><span>Verifique: <code>node --version</code> → deve mostrar v20.x+</span></div><div class="step"><span class="step-num">4</span><span>Verifique o npm: <code>npm --version</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'s2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Git</div><div class="lesson-tags"><span class="tag tag-green">Obrigatório</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Acesse <strong>git-scm.com</strong> e baixe o instalador</span></div><div class="step"><span class="step-num">2</span><span>Durante instalação: selecione <strong>"Use VS Code as default editor"</strong></span></div><div class="step"><span class="step-num">3</span><span><code>git config --global user.name "Seu Nome"</code></span></div><div class="step"><span class="step-num">4</span><span><code>git config --global user.email "seu@email.com"</code></span></div><div class="step"><span class="step-num">5</span><span>Verifique: <code>git --version</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'s3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Conta no GitHub</div><div class="lesson-tags"><span class="tag tag-green">Obrigatório</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Acesse <strong>github.com</strong> e crie uma conta com username profissional</span></div><div class="step"><span class="step-num">2</span><span>Foto de perfil real, bio em inglês: "Open to remote CA"</span></div><div class="step"><span class="step-num">3</span><span>Configure SSH key: <code>ssh-keygen -t ed25519 -C "email"</code> → GitHub → Settings → SSH Keys</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'s4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">VS Code</div><div class="lesson-tags"><span class="tag tag-green">Obrigatório</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Acesse <strong>code.visualstudio.com</strong> e baixe a versão mais recente</span></div><div class="step"><span class="step-num">2</span><span>Durante instalação Windows: marque <strong>"Add to PATH"</strong></span></div><div class="step"><span class="step-num">3</span><span>Verifique: <code>code --version</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'s5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Prettier + ESLint</div><div class="lesson-tags"><span class="tag tag-green">Obrigatório</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Extensions → <strong>"Prettier - Code formatter"</strong> → instalar</span></div><div class="step"><span class="step-num">2</span><span>Extensions → <strong>"ESLint"</strong> (Microsoft) → instalar</span></div><div class="step"><span class="step-num">3</span><span>Settings → <strong>"Format On Save"</strong> → marcar ✓</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'s6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">TypeScript Global</div><div class="lesson-tags"><span class="tag tag-green">Obrigatório</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install -g typescript ts-node</code></span></div><div class="step"><span class="step-num">2</span><span>Verifique: <code>tsc --version</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'s7')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">7</div></div></td><td><div class="day-content"><div class="lesson-title">Conta no Vercel</div><div class="lesson-tags"><span class="tag tag-blue">Para Fase 1+</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Acesse <strong>vercel.com</strong> → Sign Up → Continue with GitHub</span></div><div class="step"><span class="step-num">2</span><span>Autorize acesso aos repositórios. Você usará na Semana 8.</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'s8')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">8</div></div></td><td><div class="day-content"><div class="lesson-title">Conta no Neon.tech</div><div class="lesson-tags"><span class="tag tag-yellow">Para Fase 2</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Acesse <strong>neon.tech</strong> → Sign Up → Continue with GitHub</span></div><div class="step"><span class="step-num">2</span><span>Crie projeto "dev-plan" → guarde a connection string</span></div></div></div></td></tr>
+    </tbody>
+  </table>
+  <div class="page-nav">
+    <button class="nav-btn" onclick="goTo('home')">← Home</button>
+    <button class="nav-btn primary" onclick="goTo('w1')">Semana 1 →</button>
+  </div>
+</div>
+<!-- SEMANA 1 -->
+<div class="page" id="page-w1">
+  <div class="page-header">
+    <div class="phase-badge badge-green">🟢 Fase 1 · Mês 1</div>
+    <h1>Semana 1 — JavaScript Básico</h1>
+    <p class="subtitle">A linguagem do mercado. Toda vaga remote-ready para o Canadá exige JS sólido. Esta semana cobre os fundamentos que aparecem em toda entrevista.</p>
+    <div class="meta"><div class="meta-item">📅 Duração: <span>6 dias · 1h cada</span></div><div class="meta-item">🎯 Foco: <span>Variáveis, tipos, funções, loops</span></div></div>
+  </div>
+  <div class="info-box"><strong>🇬🇧 Tarefa de inglês:</strong> Nomeie todas variáveis e funções em inglês. Pense em inglês ao nomear: <code>userList</code>, <code>totalPrice</code>, <code>getUserById</code>.</div>
+  <table class="lesson-table">
+    <thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead>
+    <tbody>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Variáveis &amp; Tipos</div><div class="lesson-tags"><span class="tag tag-blue">let</span><span class="tag tag-blue">const</span><span class="tag tag-blue">typeof</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Diferença entre <code>var</code>, <code>let</code> e <code>const</code>. Por que nunca usar <code>var</code> em código moderno.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Declare variáveis com <code>let</code> e <code>const</code>. Tente reatribuir uma <code>const</code> — veja o erro.</span></div><div class="step"><span class="step-num">2</span><span>Teste os 7 tipos primitivos: <code>string</code>, <code>number</code>, <code>boolean</code>, <code>null</code>, <code>undefined</code>, <code>symbol</code>, <code>bigint</code></span></div><div class="step"><span class="step-num">3</span><span>Use <code>typeof</code> em cada variável. Por que <code>typeof null === 'object'</code>? (bug histórico do JS)</span></div><div class="step"><span class="step-num">4</span><span>Template literals: <code>`Hello, ${name}! You are ${age} years old.`</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Condicionais</div><div class="lesson-tags"><span class="tag tag-blue">if/else</span><span class="tag tag-blue">switch</span><span class="tag tag-blue">ternário</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Controle de fluxo. Aparece em todo algoritmo de entrevista.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Escreva uma função <code>getGrade(score)</code> que retorna "A", "B", "C", "D" ou "F"</span></div><div class="step"><span class="step-num">2</span><span>Reescreva usando <code>switch</code>. Quando usar if vs switch?</span></div><div class="step"><span class="step-num">3</span><span>Ternário: <code>const result = score >= 60 ? 'Pass' : 'Fail'</code></span></div><div class="step"><span class="step-num">4</span><span>Entenda truthy/falsy: <code>0</code>, <code>""</code>, <code>null</code>, <code>undefined</code>, <code>NaN</code> são falsy</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Funções</div><div class="lesson-tags"><span class="tag tag-blue">function</span><span class="tag tag-blue">return</span><span class="tag tag-blue">scope</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Declaração, parâmetros, retorno e escopo.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie 5 funções: <code>add(a,b)</code>, <code>isEven(n)</code>, <code>greet(name)</code>, <code>celsiusToFahrenheit(c)</code>, <code>maxOfThree(a,b,c)</code></span></div><div class="step"><span class="step-num">2</span><span>Entenda escopo: variável declarada dentro da função não existe fora. Teste isso.</span></div><div class="step"><span class="step-num">3</span><span>Toda função deve ter um propósito claro e nome descritivo em inglês</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Arrow Functions</div><div class="lesson-tags"><span class="tag tag-blue">const fn = () =></span></div></div></td><td><div class="day-content"><div class="lesson-desc">Sintaxe mais curta. É a forma padrão usada em React e Node.js modernos.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Sintaxe básica: <code>const add = (a, b) => a + b</code> — retorno implícito</span></div><div class="step"><span class="step-num">2</span><span>Com corpo: <code>const greet = (name) => { const msg = `Hello, ${name}`; return msg }</code></span></div><div class="step"><span class="step-num">3</span><span>Reescreva todas as 5 funções do dia 3 usando arrow functions</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Loops</div><div class="lesson-tags"><span class="tag tag-blue">for</span><span class="tag tag-blue">while</span><span class="tag tag-blue">for...of</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Repetição controlada. A base de qualquer algoritmo.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>for</code>: Some todos os números de 1 a 100. Resposta: 5050</span></div><div class="step"><span class="step-num">2</span><span><code>while</code>: Imprima todos os números pares de 1 a 50</span></div><div class="step"><span class="step-num">3</span><span><code>for...of</code>: Crie um array de 5 nomes e imprima <code>"Hello, [nome]!"</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Revisão + HackerRank</div><div class="lesson-tags"><span class="tag tag-green">Prática</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Resolver 3 problemas no HackerRank (nível easy).</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>hackerrank.com → "10 Days of JavaScript" → Day 0, 1, 2</span></div><div class="step"><span class="step-num">2</span><span>Commit: <code>git commit -m "feat: week 1 javascript basics"</code></span></div></div></div></td></tr>
+    </tbody>
+  </table>
+  <div class="section-title">📚 Recursos da Semana</div>
+  <div class="resource-list">
+    <a class="resource-item" href="https://www.youtube.com/watch?v=hdI2bqOjy3c" target="_blank"><span class="resource-icon">▶️</span><div class="resource-info"><div class="resource-title">JavaScript Crash Course — Traversy Media</div><div class="resource-sub">1h40 · Assista nos dias 1–5 · Em inglês</div></div><span class="resource-type type-video">Vídeo</span></a>
+    <a class="resource-item" href="https://javascript.info/first-steps" target="_blank"><span class="resource-icon">📖</span><div class="resource-info"><div class="resource-title">The Modern JS Tutorial — First Steps</div><div class="resource-sub">javascript.info · A melhor referência escrita de JS. Gratuita.</div></div><span class="resource-type type-doc">Docs</span></a>
+    <a class="resource-item" href="https://www.hackerrank.com/domains/tutorials/10-days-of-javascript" target="_blank"><span class="resource-icon">💻</span><div class="resource-info"><div class="resource-title">10 Days of JavaScript — HackerRank</div><div class="resource-sub">Desafio do dia 6 · Resolver 3 problemas</div></div><span class="resource-type type-practice">Prática</span></a>
+  </div>
+  <div class="challenge-box"><h3>🏆 Desafio — FizzBuzz</h3><p>Escreva <code>fizzBuzz(n)</code>: para múltiplos de 3 → "Fizz", múltiplos de 5 → "Buzz", ambos → "FizzBuzz". A pergunta de entrevista mais clássica do mercado canadense.</p></div>
+  <div class="page-nav">
+    <button class="nav-btn" onclick="goTo('setup')">← Setup</button>
+    <button class="nav-btn primary" onclick="goTo('w2')">Semana 2 →</button>
+  </div>
+</div>
+
+<!-- SEMANA 2 -->
+<div class="page" id="page-w2">
+  <div class="page-header">
+    <div class="phase-badge badge-green">🟢 Fase 1 · Mês 1</div>
+    <h1>Semana 2 — Arrays &amp; Objetos</h1>
+    <p class="subtitle">As estruturas de dados mais usadas em JS. Map, Filter e Reduce aparecem em todo componente React.</p>
+    <div class="meta"><div class="meta-item">📅 Duração: <span>6 dias · 1h cada</span></div><div class="meta-item">🎯 Foco: <span>Array methods, objetos, destructuring</span></div></div>
+  </div>
+  <table class="lesson-table">
+    <thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead>
+    <tbody>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w2-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Arrays Básico</div><div class="lesson-tags"><span class="tag tag-blue">push</span><span class="tag tag-blue">pop</span><span class="tag tag-blue">splice</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie array de 5 frutas. Acesse: <code>fruits[0]</code>, <code>fruits[fruits.length-1]</code></span></div><div class="step"><span class="step-num">2</span><span>Pratique: <code>.push()</code>, <code>.pop()</code>, <code>.unshift()</code>, <code>.shift()</code></span></div><div class="step"><span class="step-num">3</span><span>Encontre itens: <code>.find()</code>, <code>.findIndex()</code>, <code>.includes()</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w2-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Map &amp; Filter</div><div class="lesson-tags"><span class="tag tag-blue">.map()</span><span class="tag tag-blue">.filter()</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Array de produtos: <code>[{name:"Shirt",price:80},{name:"Shoes",price:150}]</code></span></div><div class="step"><span class="step-num">2</span><span><code>.map()</code> para formatar preços: <code>"CA$ 80.00"</code></span></div><div class="step"><span class="step-num">3</span><span><code>.filter()</code> para produtos abaixo de CA$100</span></div><div class="step"><span class="step-num">4</span><span>Encadeie: filtre e depois formate em uma linha</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w2-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Reduce</div><div class="lesson-tags"><span class="tag tag-blue">.reduce()</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Assinatura: <code>array.reduce((acc, item) => novoAcc, valorInicial)</code></span></div><div class="step"><span class="step-num">2</span><span>Carrinho: <code>[{name:"Shirt",price:80,qty:2}]</code> → calcule total</span></div><div class="step"><span class="step-num">3</span><span>Bonus: use reduce para agrupar produtos por categoria</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w2-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Objetos</div><div class="lesson-tags"><span class="tag tag-blue">Object.keys()</span><span class="tag tag-blue">entries()</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie objeto <code>user</code> com: <code>name</code>, <code>email</code>, <code>age</code> e método <code>greet()</code></span></div><div class="step"><span class="step-num">2</span><span>Use <code>Object.keys()</code>, <code>Object.values()</code>, <code>Object.entries()</code></span></div><div class="step"><span class="step-num">3</span><span>Itere com <code>for...in</code> e com <code>Object.entries().forEach()</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w2-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Destructuring</div><div class="lesson-tags"><span class="tag tag-blue">{name,age}</span><span class="tag tag-blue">[first]</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Array: <code>const [first, second, ...rest] = array</code></span></div><div class="step"><span class="step-num">2</span><span>Object: <code>const {name, age} = user</code></span></div><div class="step"><span class="step-num">3</span><span>Rename: <code>const {name: userName} = user</code></span></div><div class="step"><span class="step-num">4</span><span>Default: <code>const {age = 18} = user</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w2-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — Todo List CLI</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Estrutura: <code>[{id:1,title:"Buy groceries",done:false}]</code></span></div><div class="step"><span class="step-num">2</span><span>Funções: <code>addTask(title)</code>, <code>listTasks()</code>, <code>completeTask(id)</code>, <code>removeTask(id)</code></span></div><div class="step"><span class="step-num">3</span><span>Commit: <code>feat: week 2 todo list</code></span></div></div></div></td></tr>
+    </tbody>
+  </table>
+  <div class="section-title">📚 Recursos</div>
+  <div class="resource-list">
+    <a class="resource-item" href="https://www.youtube.com/watch?v=rRgD1yVwIvE" target="_blank"><span class="resource-icon">▶️</span><div class="resource-info"><div class="resource-title">Array Methods — Fireship</div><div class="resource-sub">10 min · Assista no Dia 2</div></div><span class="resource-type type-video">Vídeo</span></a>
+    <a class="resource-item" href="https://javascript.info/array-methods" target="_blank"><span class="resource-icon">📖</span><div class="resource-info"><div class="resource-title">Array Methods — javascript.info</div><div class="resource-sub">Referência completa com exemplos interativos</div></div><span class="resource-type type-doc">Docs</span></a>
+  </div>
+  <div class="challenge-box"><h3>🏆 Desafio da Semana</h3><p>Dado <code>[{name:"Ana",grade:85},...]</code> — em UMA linha com <code>.filter().map().reduce()</code>: filtre aprovados (≥60), extraia nomes, junte em string "Ana, Carlos".</p></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w1')">← Semana 1</button><button class="nav-btn primary" onclick="goTo('w3')">Semana 3 →</button></div>
+</div>
+<!-- SEMANA 3 -->
+<div class="page" id="page-w3">
+  <div class="page-header">
+    <div class="phase-badge badge-green">🟢 Fase 1 · Mês 1</div>
+    <h1>Semana 3 — JavaScript Assíncrono</h1>
+    <p class="subtitle">O tópico mais mal compreendido do JS. Toda chamada de API, consulta de banco e leitura de arquivo é assíncrona. Domine isso e você entende como o Node.js funciona.</p>
+    <div class="meta"><div class="meta-item">🎯 Foco: <span>Event Loop, Promises, Async/Await, Fetch</span></div></div>
+  </div>
+  <div class="info-box"><strong>🇬🇧 Tarefa:</strong> Assista o vídeo do Event Loop em inglês sem legenda. Todo entrevistador canadense espera que você já o tenha visto.</div>
+  <table class="lesson-table">
+    <thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead>
+    <tbody>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w3-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">O Event Loop</div><div class="lesson-tags"><span class="tag tag-blue">setTimeout</span><span class="tag tag-blue">Call Stack</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Assista "What the heck is the Event Loop?" (ver recursos)</span></div><div class="step"><span class="step-num">2</span><span>Prediga ANTES de rodar: <code>console.log('1'); setTimeout(()=>console.log('2'),0); console.log('3')</code></span></div><div class="step"><span class="step-num">3</span><span>Resposta: 1, 3, 2 — entenda por quê</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w3-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Promises</div><div class="lesson-tags"><span class="tag tag-blue">.then()</span><span class="tag tag-blue">.catch()</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie Promise que simula BD com <code>setTimeout</code></span></div><div class="step"><span class="step-num">2</span><span>Encadeie <code>.then()</code> e trate erros com <code>.catch()</code></span></div><div class="step"><span class="step-num">3</span><span>3 estados: <code>pending</code>, <code>fulfilled</code>, <code>rejected</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w3-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Async / Await</div><div class="lesson-tags"><span class="tag tag-blue">async</span><span class="tag tag-blue">await</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>async</code> sempre retorna uma Promise. <code>await</code> pausa dentro da função</span></div><div class="step"><span class="step-num">2</span><span>Reescreva as Promises do dia 2 com <code>async/await</code></span></div><div class="step"><span class="step-num">3</span><span>Nunca use <code>await</code> fora de <code>async function</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w3-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Fetch API</div><div class="lesson-tags"><span class="tag tag-blue">fetch(url)</span><span class="tag tag-blue">.json()</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Console do browser: <code>const res = await fetch('https://jsonplaceholder.typicode.com/users'); const data = await res.json()</code></span></div><div class="step"><span class="step-num">2</span><span>Recrie em Node.js (Node 18+ tem fetch nativo)</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w3-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Try/Catch &amp; Error Handling</div><div class="lesson-tags"><span class="tag tag-blue">try/catch</span><span class="tag tag-blue">finally</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Envolva código async em <code>try/catch/finally</code></span></div><div class="step"><span class="step-num">2</span><span>Wrapper profissional: <code>async function safeFetch(url) { try { return {data, error:null} } catch(e) { return {data:null, error:e.message} } }</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w3-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — GitHub User Finder</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Script Node.js: <code>node app.js torvalds</code></span></div><div class="step"><span class="step-num">2</span><span>Busca: <code>https://api.github.com/users/USERNAME</code></span></div><div class="step"><span class="step-num">3</span><span>Imprime: nome, bio, repos, seguidores. Trate 404.</span></div><div class="step"><span class="step-num">4</span><span>Bonus: <code>Promise.all()</code> para buscar 3 usuários simultâneos</span></div></div></div></td></tr>
+    </tbody>
+  </table>
+  <div class="section-title">📚 Recursos</div>
+  <div class="resource-list">
+    <a class="resource-item" href="https://www.youtube.com/watch?v=8aGhZQkoFbQ" target="_blank"><span class="resource-icon">▶️</span><div class="resource-info"><div class="resource-title">What the heck is the Event Loop? — Philip Roberts</div><div class="resource-sub">26 min · Clássico absoluto · Assista antes do Dia 1</div></div><span class="resource-type type-video">Vídeo</span></a>
+    <a class="resource-item" href="https://www.youtube.com/watch?v=V_Kr9OSfDeU" target="_blank"><span class="resource-icon">▶️</span><div class="resource-info"><div class="resource-title">Async JS Crash Course — Traversy Media</div><div class="resource-sub">30 min · Dias 2–3</div></div><span class="resource-type type-video">Vídeo</span></a>
+    <a class="resource-item" href="https://javascript.info/async" target="_blank"><span class="resource-icon">📖</span><div class="resource-info"><div class="resource-title">Async — javascript.info</div><div class="resource-sub">Capítulo completo. Leia junto com os vídeos.</div></div><span class="resource-type type-doc">Docs</span></a>
+  </div>
+  <div class="challenge-box"><h3>🏆 Desafio</h3><p>Implemente <code>fetchWithRetry(url, retries=3)</code>: tenta a requisição, e em caso de falha tenta novamente até <code>retries</code> vezes com 1s de delay entre tentativas usando <code>async/await</code>.</p></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w2')">← Semana 2</button><button class="nav-btn primary" onclick="goTo('w4')">Semana 4 →</button></div>
+</div>
+
+<!-- SEMANA 4 -->
+<div class="page" id="page-w4">
+  <div class="page-header">
+    <div class="phase-badge badge-green">🟢 Fase 1 · Mês 1</div>
+    <h1>Semana 4 — ES6+ Avançado</h1>
+    <p class="subtitle">Spread, Rest, Módulos, Classes e Optional Chaining. Código JavaScript moderno e legível.</p>
+    <div class="meta"><div class="meta-item">🎯 Foco: <span>Spread, Módulos, Classes, Optional Chaining</span></div></div>
+  </div>
+  <table class="lesson-table">
+    <thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead>
+    <tbody>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w4-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Spread &amp; Rest</div><div class="lesson-tags"><span class="tag tag-blue">...arr</span><span class="tag tag-blue">...args</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Spread para copiar: <code>[...arr]</code> e <code>{...obj}</code> — cópias rasas</span></div><div class="step"><span class="step-num">2</span><span>Rest: <code>function sum(...numbers)</code> — aceita ilimitados args</span></div><div class="step"><span class="step-num">3</span><span>Função que aceita números ilimitados e retorna média</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w4-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">ES Modules</div><div class="lesson-tags"><span class="tag tag-blue">export</span><span class="tag tag-blue">import</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie 3 arquivos: <code>utils.js</code>, <code>data.js</code>, <code>index.js</code></span></div><div class="step"><span class="step-num">2</span><span>Export default vs named exports — quando usar cada um</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w4-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Classes</div><div class="lesson-tags"><span class="tag tag-blue">class</span><span class="tag tag-blue">extends</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie <code>class BankAccount</code> com <code>constructor(owner, balance)</code></span></div><div class="step"><span class="step-num">2</span><span>Métodos: <code>deposit(amount)</code>, <code>withdraw(amount)</code>, <code>getBalance()</code></span></div><div class="step"><span class="step-num">3</span><span><code>class SavingsAccount extends BankAccount</code> com <code>applyInterest(rate)</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w4-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Optional Chaining &amp; Nullish</div><div class="lesson-tags"><span class="tag tag-blue">?.</span><span class="tag tag-blue">??</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>user?.address?.city</code> — sem mais "cannot read property of undefined"</span></div><div class="step"><span class="step-num">2</span><span><code>value ?? 'default'</code> — fallback só para null/undefined</span></div><div class="step"><span class="step-num">3</span><span>Refatore o GitHub Finder da Semana 3 usando ambos</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w4-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Closures &amp; Higher-Order</div><div class="lesson-tags"><span class="tag tag-blue">closure</span><span class="tag tag-blue">HOF</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Closure: função que "lembra" variáveis do escopo externo. Crie <code>makeCounter()</code></span></div><div class="step"><span class="step-num">2</span><span>HOF: funções que recebem ou retornam funções. Crie <code>multiplyBy(n)</code> que retorna função</span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w4-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — Sistema de Estudantes</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>class Student</code>: <code>addGrade()</code>, <code>getAverage()</code>, <code>getStatus()</code></span></div><div class="step"><span class="step-num">2</span><span><code>class Classroom</code>: <code>addStudent()</code>, <code>getTopStudent()</code>, <code>getPassingStudents()</code></span></div><div class="step"><span class="step-num">3</span><span>Separe em módulos. Push para GitHub com README. <strong>Fim do Mês 1!</strong></span></div></div></div></td></tr>
+    </tbody>
+  </table>
+  <div class="challenge-box"><h3>🏆 Desafio</h3><p>Implemente <code>pipe(...fns)</code> — função que recebe N funções e retorna uma nova função que aplica cada uma em sequência: <code>pipe(double, addOne, square)(3)</code> → calcula em cadeia. Conceito fundamental de programação funcional.</p></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w3')">← Semana 3</button><button class="nav-btn primary" onclick="goTo('w5')">Semana 5 →</button></div>
+</div>
+<!-- SEMANA 5 -->
+<div class="page" id="page-w5">
+  <div class="page-header"><div class="phase-badge badge-green">🟢 Fase 1 · Mês 2</div><h1>Semana 5 — Git &amp; GitHub Profissional</h1><p class="subtitle">Controle de versão não é opcional. Toda entrevista canadense pergunta sobre Git workflow. Recrutadores checam seu GitHub antes da entrevista.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w5-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Comandos Essenciais</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>git init</code>, <code>git add .</code>, <code>git commit -m "msg"</code>, <code>git status</code>, <code>git log --oneline</code></span></div><div class="step"><span class="step-num">2</span><span>Crie projeto e faça 5 commits, cada um adicionando uma feature</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w5-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">GitHub Remote</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>git remote add origin URL</code>, <code>git push -u origin main</code>, <code>git pull</code></span></div><div class="step"><span class="step-num">2</span><span>Suba o Sistema de Estudantes. Escreva README.md em inglês.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w5-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Branches</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>git branch feature/add-login</code>, <code>git switch</code>, <code>git merge</code></span></div><div class="step"><span class="step-num">2</span><span>Crie branch, faça commits, merge na main, delete a branch</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w5-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Merge Conflicts</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie conflito intencionalmente: edite a mesma linha em 2 branches</span></div><div class="step"><span class="step-num">2</span><span>VS Code vai destacar o conflito. Resolva manualmente. É perguntado em toda entrevista.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w5-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Conventional Commits</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Padrão: <code>feat:</code> · <code>fix:</code> · <code>docs:</code> · <code>refactor:</code> · <code>test:</code> · <code>chore:</code></span></div><div class="step"><span class="step-num">2</span><span>Atualize todos seus repos para usar este padrão</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w5-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">README Profissional</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Template: Título, Descrição, Tech Stack, Como rodar, Screenshots, Link deploy</span></div><div class="step"><span class="step-num">2</span><span>Atualize README de todos os projetos das semanas 1–4</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="section-title">📚 Recursos</div>
+  <div class="resource-list"><a class="resource-item" href="https://www.youtube.com/watch?v=RGOj5yH7evk" target="_blank"><span class="resource-icon">▶️</span><div class="resource-info"><div class="resource-title">Git &amp; GitHub Crash Course — freeCodeCamp</div><div class="resource-sub">1h · Dias 1–3</div></div><span class="resource-type type-video">Vídeo</span></a><a class="resource-item" href="https://learngitbranching.js.org/" target="_blank"><span class="resource-icon">💻</span><div class="resource-info"><div class="resource-title">Learn Git Branching — Interativo</div><div class="resource-sub">Visual e interativo. Use no Dia 3.</div></div><span class="resource-type type-practice">Prática</span></a></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w4')">← Semana 4</button><button class="nav-btn primary" onclick="goTo('w6')">Semana 6 →</button></div>
+</div>
+
+<!-- SEMANA 6 -->
+<div class="page" id="page-w6">
+  <div class="page-header"><div class="phase-badge badge-green">🟢 Fase 1 · Mês 2</div><h1>Semana 6 — TypeScript Básico</h1><p class="subtitle">TypeScript é obrigatório no mercado canadense. JS com tipagem estática — captura bugs antes de rodar.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w6-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Tipos Primitivos</div><div class="lesson-tags"><span class="tag tag-blue">string</span><span class="tag tag-blue">number</span><span class="tag tag-blue">boolean</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie <code>tsconfig.json</code> com <code>tsc --init</code></span></div><div class="step"><span class="step-num">2</span><span>Declare: <code>let name: string</code>, <code>let age: number</code>, <code>let active: boolean</code></span></div><div class="step"><span class="step-num">3</span><span>Tente atribuir tipo errado — veja o erro de compilação</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w6-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Arrays &amp; Tuplas</div><div class="lesson-tags"><span class="tag tag-blue">string[]</span><span class="tag tag-blue">[string,number]</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>const names: string[] = ['Ana', 'Bob']</code></span></div><div class="step"><span class="step-num">2</span><span>Tupla: <code>const point: [number, number] = [10, 20]</code></span></div><div class="step"><span class="step-num">3</span><span>Tipo do retorno de função: <code>function add(a: number, b: number): number</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w6-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Interfaces</div><div class="lesson-tags"><span class="tag tag-blue">interface</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Defina: <code>interface User { id: number; name: string; email: string; age?: number }</code></span></div><div class="step"><span class="step-num">2</span><span>Crie função que recebe <code>User</code> e retorna string formatada</span></div><div class="step"><span class="step-num">3</span><span>Estenda: <code>interface Admin extends User { role: string }</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w6-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Type Aliases &amp; Union</div><div class="lesson-tags"><span class="tag tag-blue">type</span><span class="tag tag-blue">A | B</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>type Status = 'active' | 'inactive' | 'pending'</code></span></div><div class="step"><span class="step-num">2</span><span><code>type ID = string | number</code> — union type</span></div><div class="step"><span class="step-num">3</span><span>Quando usar <code>type</code> vs <code>interface</code>? (interface para objetos, type para tudo)</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w6-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Enums</div><div class="lesson-tags"><span class="tag tag-blue">enum</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>enum Direction { Up, Down, Left, Right }</code></span></div><div class="step"><span class="step-num">2</span><span>String enum: <code>enum Role { Admin = 'ADMIN', User = 'USER' }</code></span></div><div class="step"><span class="step-num">3</span><span>Prefira <code>const enum</code> para performance em produção</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w6-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — Todo App em TS</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Reescreva o Todo da Semana 2 em TypeScript com interfaces tipadas</span></div><div class="step"><span class="step-num">2</span><span><code>interface Todo { id: number; title: string; completed: boolean; createdAt: Date }</code></span></div><div class="step"><span class="step-num">3</span><span>Compile com <code>tsc</code> sem erros. Commit.</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="section-title">📚 Recursos</div>
+  <div class="resource-list"><a class="resource-item" href="https://www.youtube.com/watch?v=BwuLxPH8IDs" target="_blank"><span class="resource-icon">▶️</span><div class="resource-info"><div class="resource-title">TypeScript Crash Course — Traversy Media</div><div class="resource-sub">1h20 · Assista nos dias 1–3</div></div><span class="resource-type type-video">Vídeo</span></a><a class="resource-item" href="https://www.typescriptlang.org/docs/handbook/intro.html" target="_blank"><span class="resource-icon">📖</span><div class="resource-info"><div class="resource-title">TypeScript Handbook — Oficial</div><div class="resource-sub">Leia junto com a prática</div></div><span class="resource-type type-doc">Docs</span></a></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w5')">← Semana 5</button><button class="nav-btn primary" onclick="goTo('w7')">Semana 7 →</button></div>
+</div>
+
+<!-- SEMANA 7 -->
+<div class="page" id="page-w7">
+  <div class="page-header"><div class="phase-badge badge-green">🟢 Fase 1 · Mês 2</div><h1>Semana 7 — TypeScript Intermediário</h1><p class="subtitle">Generics, Utility Types e Type Guards. Isso é o que separa um dev que "usa TS" de um que realmente entende TS.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w7-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Generics</div><div class="lesson-tags"><span class="tag tag-blue">function&lt;T&gt;</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Problema sem generics: <code>function first(arr: any[]) {}</code> — perde a tipagem</span></div><div class="step"><span class="step-num">2</span><span>Solução: <code>function first&lt;T&gt;(arr: T[]): T { return arr[0] }</code></span></div><div class="step"><span class="step-num">3</span><span>Crie <code>function merge&lt;T, U&gt;(a: T, b: U): T &amp; U</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w7-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Utility Types</div><div class="lesson-tags"><span class="tag tag-blue">Partial</span><span class="tag tag-blue">Pick</span><span class="tag tag-blue">Omit</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>Partial&lt;User&gt;</code> — todos os campos opcionais (para updates)</span></div><div class="step"><span class="step-num">2</span><span><code>Pick&lt;User, 'id' | 'name'&gt;</code> — seleciona campos específicos</span></div><div class="step"><span class="step-num">3</span><span><code>Omit&lt;User, 'password'&gt;</code> — remove campos (para responses da API)</span></div><div class="step"><span class="step-num">4</span><span><code>Required&lt;T&gt;</code>, <code>Readonly&lt;T&gt;</code>, <code>Record&lt;K,V&gt;</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w7-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Type Guards</div><div class="lesson-tags"><span class="tag tag-blue">typeof</span><span class="tag tag-blue">instanceof</span><span class="tag tag-blue">in</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>User-defined guard: <code>function isString(val: unknown): val is string { return typeof val === 'string' }</code></span></div><div class="step"><span class="step-num">2</span><span>Discriminated unions: <code>type Shape = {kind:'circle',radius:number} | {kind:'square',side:number}</code></span></div><div class="step"><span class="step-num">3</span><span>Função <code>getArea(shape: Shape)</code> com switch no <code>kind</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w7-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Classes Tipadas</div><div class="lesson-tags"><span class="tag tag-blue">private</span><span class="tag tag-blue">readonly</span><span class="tag tag-blue">abstract</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Modificadores: <code>public</code>, <code>private</code>, <code>protected</code>, <code>readonly</code></span></div><div class="step"><span class="step-num">2</span><span>Shorthand: <code>constructor(private name: string, public age: number)</code></span></div><div class="step"><span class="step-num">3</span><span><code>abstract class Animal</code> com método abstrato <code>makeSound()</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w7-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Mapped &amp; Conditional Types</div><div class="lesson-tags"><span class="tag tag-purple">Avançado</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Mapped type: <code>type Optional&lt;T&gt; = { [K in keyof T]?: T[K] }</code></span></div><div class="step"><span class="step-num">2</span><span>Conditional: <code>type IsString&lt;T&gt; = T extends string ? true : false</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w7-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — API Client Tipado</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie um cliente HTTP genérico: <code>async function get&lt;T&gt;(url: string): Promise&lt;T&gt;</code></span></div><div class="step"><span class="step-num">2</span><span>Defina interfaces para a JSONPlaceholder API (User, Post, Comment)</span></div><div class="step"><span class="step-num">3</span><span>Use Utility Types para criar <code>CreateUserDTO</code> e <code>UpdateUserDTO</code></span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="challenge-box"><h3>🏆 Desafio</h3><p>Implemente <code>DeepReadonly&lt;T&gt;</code> — um mapped type que torna todos os campos de um objeto (inclusive aninhados) readonly. Teste com um objeto com nested objects.</p></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w6')">← Semana 6</button><button class="nav-btn primary" onclick="goTo('w8')">Semana 8 →</button></div>
+</div>
+<!-- SEMANA 8 -->
+<div class="page" id="page-w8">
+  <div class="page-header"><div class="phase-badge badge-green">🟢 Fase 1 · Mês 2</div><h1>Semana 8 — HTML + CSS Moderno</h1><p class="subtitle">Flexbox, CSS Grid, variáveis CSS e deploy no Vercel. Você precisa conseguir transformar um design em código responsivo rapidamente.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w8-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Flexbox</div><div class="lesson-tags"><span class="tag tag-blue">display:flex</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Brinque no Flexbox Froggy (flexboxfroggy.com) — complete todos os 24 níveis</span></div><div class="step"><span class="step-num">2</span><span>Construa uma navbar responsiva usando somente flexbox</span></div><div class="step"><span class="step-num">3</span><span>Centralize um elemento vertical e horizontalmente (3 formas diferentes)</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w8-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">CSS Grid</div><div class="lesson-tags"><span class="tag tag-blue">display:grid</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Grid Garden (cssgridgarden.com) — complete todos os 28 níveis</span></div><div class="step"><span class="step-num">2</span><span>Crie um layout de 3 colunas com sidebar e main content</span></div><div class="step"><span class="step-num">3</span><span><code>grid-template-areas</code> para layout semântico</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w8-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">CSS Variables &amp; Responsivo</div><div class="lesson-tags"><span class="tag tag-blue">--var</span><span class="tag tag-blue">@media</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie design system com variáveis: <code>:root { --color-primary: #...; --space-4: 1rem }</code></span></div><div class="step"><span class="step-num">2</span><span>Media queries mobile-first: <code>@media (min-width: 768px) { ... }</code></span></div><div class="step"><span class="step-num">3</span><span>Dark mode: <code>@media (prefers-color-scheme: dark) { ... }</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w8-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Animações CSS</div><div class="lesson-tags"><span class="tag tag-blue">transition</span><span class="tag tag-blue">@keyframes</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Hover effects: <code>transition: all 0.3s ease</code> em botões e cards</span></div><div class="step"><span class="step-num">2</span><span><code>@keyframes fadeIn</code> para animações de entrada</span></div><div class="step"><span class="step-num">3</span><span>Loading spinner com <code>@keyframes spin</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w8-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Deploy no Vercel</div><div class="lesson-tags"><span class="tag tag-green">Deploy</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>vercel.com → Import Project → selecione repo do GitHub</span></div><div class="step"><span class="step-num">2</span><span>Deploy automático a cada push na main</span></div><div class="step"><span class="step-num">3</span><span>URL personalizada: <code>nome-projeto.vercel.app</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w8-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — Landing Page</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie landing page com: Hero, Features (3 colunas grid), Testimonials, CTA, Footer</span></div><div class="step"><span class="step-num">2</span><span>100% responsivo: mobile + tablet + desktop</span></div><div class="step"><span class="step-num">3</span><span>Deploy no Vercel. Adicione URL no README.</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="section-title">📚 Recursos</div>
+  <div class="resource-list"><a class="resource-item" href="https://flexboxfroggy.com/" target="_blank"><span class="resource-icon">🐸</span><div class="resource-info"><div class="resource-title">Flexbox Froggy — Jogo Interativo</div><div class="resource-sub">24 níveis · Dia 1</div></div><span class="resource-type type-practice">Prática</span></a><a class="resource-item" href="https://cssgridgarden.com/" target="_blank"><span class="resource-icon">🌱</span><div class="resource-info"><div class="resource-title">Grid Garden — Jogo Interativo</div><div class="resource-sub">28 níveis · Dia 2</div></div><span class="resource-type type-practice">Prática</span></a></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w7')">← Semana 7</button><button class="nav-btn primary" onclick="goTo('w9')">Semana 9 →</button></div>
+</div>
+
+<!-- SEMANA 9 -->
+<div class="page" id="page-w9">
+  <div class="page-header"><div class="phase-badge badge-green">🟢 Fase 1 · Mês 3</div><h1>Semana 9 — React Básico</h1><p class="subtitle">A biblioteca mais usada no mercado canadense. JSX, componentes, props e estado. Esta semana muda como você pensa em interfaces.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w9-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">O que é React + JSX</div><div class="lesson-tags"><span class="tag tag-blue">JSX</span><span class="tag tag-blue">Vite</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie projeto: <code>npm create vite@latest my-app -- --template react-ts</code></span></div><div class="step"><span class="step-num">2</span><span>Entenda o que o JSX é: açúcar sintático para <code>React.createElement()</code></span></div><div class="step"><span class="step-num">3</span><span>Diferença JSX vs HTML: <code>className</code>, <code>htmlFor</code>, self-closing tags</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w9-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Componentes &amp; Props</div><div class="lesson-tags"><span class="tag tag-blue">FC</span><span class="tag tag-blue">props</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie componente <code>Button</code>: props <code>label</code>, <code>onClick</code>, <code>variant: 'primary'|'secondary'</code></span></div><div class="step"><span class="step-num">2</span><span>Crie <code>Card</code> com <code>title</code>, <code>description</code>, <code>imageUrl</code></span></div><div class="step"><span class="step-num">3</span><span>Props são somente leitura — nunca as modifique diretamente</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w9-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Estado com useState</div><div class="lesson-tags"><span class="tag tag-blue">useState</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>const [count, setCount] = useState(0)</code></span></div><div class="step"><span class="step-num">2</span><span>Nunca mutate state diretamente: <code>setCount(count + 1)</code> não <code>count++</code></span></div><div class="step"><span class="step-num">3</span><span>State com objeto: <code>setUser(prev => ({...prev, name: 'Bob'}))</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w9-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Listas &amp; Renderização Condicional</div><div class="lesson-tags"><span class="tag tag-blue">.map()</span><span class="tag tag-blue">key</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Renderize lista: <code>{users.map(u => &lt;UserCard key={u.id} user={u} /&gt;)}</code></span></div><div class="step"><span class="step-num">2</span><span>A <code>key</code> deve ser única e estável. Nunca use o índice como key em listas dinâmicas.</span></div><div class="step"><span class="step-num">3</span><span>Condicional: <code>{isLoading ? &lt;Spinner /&gt; : &lt;Content /&gt;}</code> e <code>{error &amp;&amp; &lt;Error /&gt;}</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w9-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Eventos</div><div class="lesson-tags"><span class="tag tag-blue">onClick</span><span class="tag tag-blue">onChange</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Input controlado: <code>&lt;input value={text} onChange={e => setText(e.target.value)} /&gt;</code></span></div><div class="step"><span class="step-num">2</span><span>Form submit: <code>onSubmit={e => { e.preventDefault(); ... }}</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w9-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — Counter + Todo</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Counter com +, -, reset e histórico de operações</span></div><div class="step"><span class="step-num">2</span><span>Todo List: adicionar, completar, deletar, filtrar (all/active/completed)</span></div><div class="step"><span class="step-num">3</span><span>Deploy no Vercel. Este é seu primeiro projeto React público!</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="section-title">📚 Recursos</div>
+  <div class="resource-list"><a class="resource-item" href="https://react.dev/learn" target="_blank"><span class="resource-icon">📖</span><div class="resource-info"><div class="resource-title">React Docs — react.dev</div><div class="resource-sub">A documentação oficial redesenhada. Excelente.</div></div><span class="resource-type type-doc">Docs</span></a><a class="resource-item" href="https://www.youtube.com/watch?v=bMknfKXIFA8" target="_blank"><span class="resource-icon">▶️</span><div class="resource-info"><div class="resource-title">React Course — freeCodeCamp</div><div class="resource-sub">12h completo. Use como referência</div></div><span class="resource-type type-video">Vídeo</span></a></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w8')">← Semana 8</button><button class="nav-btn primary" onclick="goTo('w10')">Semana 10 →</button></div>
+</div>
+<!-- SEMANA 10 -->
+<div class="page" id="page-w10">
+  <div class="page-header"><div class="phase-badge badge-green">🟢 Fase 1 · Mês 3</div><h1>Semana 10 — React Hooks</h1><p class="subtitle">useEffect, useContext, useReducer, useRef. Hooks são o coração do React moderno — toda entrevista vai perguntar sobre eles.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w10-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">useEffect</div><div class="lesson-tags"><span class="tag tag-blue">useEffect</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>3 formas: sem deps (toda renderização), <code>[]</code> (só na montagem), <code>[dep]</code> (quando dep muda)</span></div><div class="step"><span class="step-num">2</span><span>Cleanup: retorne função de limpeza para evitar memory leaks</span></div><div class="step"><span class="step-num">3</span><span>Fetch de dados: busque usuários da JSONPlaceholder API no mount</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w10-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">useContext</div><div class="lesson-tags"><span class="tag tag-blue">Context API</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie <code>ThemeContext</code> para gerenciar dark/light mode globalmente</span></div><div class="step"><span class="step-num">2</span><span>Crie custom hook: <code>function useTheme() { return useContext(ThemeContext) }</code></span></div><div class="step"><span class="step-num">3</span><span>Context resolve prop drilling mas não substitui gerenciadores de estado complexos</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w10-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">useReducer</div><div class="lesson-tags"><span class="tag tag-blue">useReducer</span><span class="tag tag-blue">dispatch</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Reescreva o Todo da S9 com <code>useReducer</code> ao invés de múltiplos <code>useState</code></span></div><div class="step"><span class="step-num">2</span><span>Actions: <code>ADD_TODO</code>, <code>TOGGLE_TODO</code>, <code>DELETE_TODO</code>, <code>SET_FILTER</code></span></div><div class="step"><span class="step-num">3</span><span>Quando usar: quando o próximo state depende do anterior ou há múltiplas ações</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w10-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">useRef &amp; useMemo</div><div class="lesson-tags"><span class="tag tag-blue">useRef</span><span class="tag tag-blue">useMemo</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>useRef</code>: acesso direto ao DOM (<code>inputRef.current.focus()</code>) e valores mutáveis sem re-render</span></div><div class="step"><span class="step-num">2</span><span><code>useMemo</code>: memoize computações pesadas — só recalcula quando deps mudam</span></div><div class="step"><span class="step-num">3</span><span>Cuidado: <code>useMemo</code> tem custo. Use só quando há problema de performance comprovado.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w10-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Custom Hooks</div><div class="lesson-tags"><span class="tag tag-purple">useX()</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie <code>useFetch&lt;T&gt;(url)</code> → retorna <code>{data, loading, error}</code></span></div><div class="step"><span class="step-num">2</span><span>Crie <code>useLocalStorage&lt;T&gt;(key, initialValue)</code> — persiste state no localStorage</span></div><div class="step"><span class="step-num">3</span><span>Crie <code>useDebounce&lt;T&gt;(value, delay)</code> — atrasa atualizações (útil em search inputs)</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w10-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — Weather App</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>API: Open-Meteo (gratuita, sem chave): <code>https://api.open-meteo.com/v1/forecast</code></span></div><div class="step"><span class="step-num">2</span><span>Use <code>useFetch</code>, <code>useDebounce</code> para search de cidade, <code>useLocalStorage</code> para favoritos</span></div><div class="step"><span class="step-num">3</span><span>Dark mode com <code>useContext</code>. Deploy no Vercel.</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="challenge-box"><h3>🏆 Desafio</h3><p>Implemente <code>useAsync&lt;T&gt;(asyncFn, deps)</code> — hook que gerencia execução de funções assíncronas com estados <code>idle | loading | success | error</code> e suporte a cancelamento com AbortController.</p></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w9')">← Semana 9</button><button class="nav-btn primary" onclick="goTo('w11')">Semana 11 →</button></div>
+</div>
+
+<!-- SEMANA 11 -->
+<div class="page" id="page-w11">
+  <div class="page-header"><div class="phase-badge badge-green">🟢 Fase 1 · Mês 3</div><h1>Semana 11 — React Router &amp; Formulários</h1><p class="subtitle">Navegação entre páginas com React Router v6 e formulários controlados com validação. Fundamentos de qualquer SPA.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w11-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">React Router v6</div><div class="lesson-tags"><span class="tag tag-blue">BrowserRouter</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install react-router-dom</code></span></div><div class="step"><span class="step-num">2</span><span>Crie rotas: Home, About, Dashboard, NotFound (404)</span></div><div class="step"><span class="step-num">3</span><span><code>&lt;Link&gt;</code> vs <code>&lt;NavLink&gt;</code> (NavLink adiciona classe "active")</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w11-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Params &amp; Nested Routes</div><div class="lesson-tags"><span class="tag tag-blue">useParams</span><span class="tag tag-blue">Outlet</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Rota dinâmica: <code>/users/:id</code> → <code>const {id} = useParams()</code></span></div><div class="step"><span class="step-num">2</span><span>Nested routes com <code>&lt;Outlet /&gt;</code></span></div><div class="step"><span class="step-num">3</span><span>Navegação programática: <code>const navigate = useNavigate()</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w11-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">React Hook Form</div><div class="lesson-tags"><span class="tag tag-blue">useForm</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install react-hook-form</code></span></div><div class="step"><span class="step-num">2</span><span>Form de registro: name, email, password com <code>register</code> e <code>handleSubmit</code></span></div><div class="step"><span class="step-num">3</span><span>Exibe erros com <code>formState.errors</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w11-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Validação com Zod</div><div class="lesson-tags"><span class="tag tag-blue">z.object()</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install zod @hookform/resolvers</code></span></div><div class="step"><span class="step-num">2</span><span>Schema: <code>const schema = z.object({ email: z.string().email(), password: z.string().min(8) })</code></span></div><div class="step"><span class="step-num">3</span><span>Use <code>zodResolver(schema)</code> como resolver do React Hook Form</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w11-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Protected Routes</div><div class="lesson-tags"><span class="tag tag-blue">PrivateRoute</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Componente <code>&lt;PrivateRoute&gt;</code>: verifica auth, redireciona para /login se não autenticado</span></div><div class="step"><span class="step-num">2</span><span>Estado de auth com Context + localStorage para persistir sessão</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w11-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — Multi-Page App</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>App com Login, Dashboard (protegido), Lista de Usuários, Detalhe do Usuário</span></div><div class="step"><span class="step-num">2</span><span>Auth mock com localStorage. Formulários com RHF + Zod.</span></div><div class="step"><span class="step-num">3</span><span>Deploy no Vercel. Este é o projeto mais completo até agora.</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w10')">← Semana 10</button><button class="nav-btn primary" onclick="goTo('w12')">Semana 12 →</button></div>
+</div>
+
+<!-- SEMANA 12 -->
+<div class="page" id="page-w12">
+  <div class="page-header"><div class="phase-badge badge-green">🟢 Fase 1 · Mês 3</div><h1>Semana 12 — Portfólio v1 🚀</h1><p class="subtitle">Seu portfólio é seu cartão de visita para recrutadores canadenses. Deve comunicar competência em 3 segundos. Construa com React + TypeScript.</p></div>
+  <div class="success-box"><strong>🎉 Fim da Fase 1!</strong> Ao terminar esta semana você terá: TypeScript, React, Git, CSS responsivo e 3 projetos no ar. Você está pronto para a Fase 2.</div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w12-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Design &amp; Planejamento</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Estude 5 portfólios de devs que foram para o Canadá. Anote o que funciona.</span></div><div class="step"><span class="step-num">2</span><span>Seções: Hero, About, Skills, Projects (3), Contact, Footer</span></div><div class="step"><span class="step-num">3</span><span>Escreva TUDO em inglês. Recrutadores canadenses não leem português.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w12-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Hero + About</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Hero: foto (ou avatar), nome, título ("Full-Stack Developer · Open to Remote CA"), CTA</span></div><div class="step"><span class="step-num">2</span><span>About: 2 parágrafos em inglês sobre sua jornada e objetivos</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w12-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Projetos</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Cards dos 3 melhores projetos: screenshot, descrição, tech stack, links GitHub + Demo</span></div><div class="step"><span class="step-num">2</span><span>Cada projeto deve ter README detalhado no GitHub</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w12-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Skills + Contact</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Skills: grade visual das tecnologias (só mostre o que você realmente sabe)</span></div><div class="step"><span class="step-num">2</span><span>Contact: EmailJS ou Formspree para formulário funcional sem backend</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w12-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">SEO + Performance</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Meta tags: <code>&lt;title&gt;</code>, <code>&lt;meta description&gt;</code>, Open Graph (para link preview no LinkedIn)</span></div><div class="step"><span class="step-num">2</span><span>Lighthouse score: mínimo 90 em todas as categorias</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w12-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Deploy + Domínio + LinkedIn</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Deploy no Vercel com domínio personalizado (ex: samueldev.com)</span></div><div class="step"><span class="step-num">2</span><span>Adicione a URL no LinkedIn, GitHub bio, e CV</span></div><div class="step"><span class="step-num">3</span><span><strong>🏆 Fase 1 concluída! Você tem um portfólio online e 3 projetos públicos.</strong></span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w11')">← Semana 11</button><button class="nav-btn primary" onclick="goTo('w13')">Fase 2: Semana 13 →</button></div>
+</div>
+<!-- SEMANA 13 -->
+<div class="page" id="page-w13">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 4</div><h1>Semana 13 — Next.js App Router</h1><p class="subtitle">O framework React mais usado em produção. Server Components, file-based routing e Server Actions mudam completamente como você constrói apps.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w13-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">App Router Basics</div><div class="lesson-tags"><span class="tag tag-yellow">Next.js 14+</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npx create-next-app@latest --typescript --app</code></span></div><div class="step"><span class="step-num">2</span><span>File-based routing: <code>app/about/page.tsx</code> → rota <code>/about</code></span></div><div class="step"><span class="step-num">3</span><span>Layouts: <code>app/layout.tsx</code> wraps todas as páginas</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w13-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Server vs Client Components</div><div class="lesson-tags"><span class="tag tag-yellow">'use client'</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Por default, todo componente em App Router é Server Component — roda no servidor</span></div><div class="step"><span class="step-num">2</span><span>Adicione <code>'use client'</code> apenas quando precisar: state, eventos, browser APIs</span></div><div class="step"><span class="step-num">3</span><span>Server Components podem fetch direto: <code>const data = await fetch(url)</code> sem useEffect</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w13-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Data Fetching &amp; Caching</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>{ cache: 'force-cache' }</code> (SSG), <code>{ cache: 'no-store' }</code> (SSR), <code>{ next: { revalidate: 60 } }</code> (ISR)</span></div><div class="step"><span class="step-num">2</span><span>Loading UI: <code>app/loading.tsx</code> — skeleton automático com Suspense</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w13-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">API Routes &amp; Server Actions</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>API Route: <code>app/api/users/route.ts</code> com <code>GET</code>, <code>POST</code></span></div><div class="step"><span class="step-num">2</span><span>Server Action: função com <code>'use server'</code> — call direta sem API route</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w13-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Metadata &amp; SEO</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Export <code>metadata</code> object de qualquer page.tsx para SEO automático</span></div><div class="step"><span class="step-num">2</span><span>Dynamic metadata: <code>export async function generateMetadata({params})</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w13-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — Blog com Next.js</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Blog: Home (lista de posts), Post Detail, About. Dados mockados em JSON.</span></div><div class="step"><span class="step-num">2</span><span>Server Components para fetch, Client Components para interatividade</span></div><div class="step"><span class="step-num">3</span><span>Deploy na Vercel. Next.js funciona perfeitamente na Vercel.</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="section-title">📚 Recursos</div>
+  <div class="resource-list"><a class="resource-item" href="https://nextjs.org/docs" target="_blank"><span class="resource-icon">📖</span><div class="resource-info"><div class="resource-title">Next.js Docs — Oficial</div><div class="resource-sub">A documentação é excelente. Leia o Learn Next.js.</div></div><span class="resource-type type-doc">Docs</span></a></div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w12')">← Semana 12</button><button class="nav-btn primary" onclick="goTo('w14')">Semana 14 →</button></div>
+</div>
+
+<!-- SEMANA 14 -->
+<div class="page" id="page-w14">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 4</div><h1>Semana 14 — Node.js + Express API</h1><p class="subtitle">Construa uma REST API profissional. Fundamento de todo backend JavaScript/TypeScript.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w14-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Node.js Core</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Módulos nativos: <code>fs</code>, <code>path</code>, <code>http</code>, <code>os</code></span></div><div class="step"><span class="step-num">2</span><span>Crie server HTTP puro: <code>http.createServer((req,res) => {...})</code></span></div><div class="step"><span class="step-num">3</span><span>Entenda por que Express existe: simplifica o servidor HTTP nativo</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w14-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Express Setup</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install express cors helmet morgan dotenv</code></span></div><div class="step"><span class="step-num">2</span><span>Middlewares essenciais: <code>express.json()</code>, <code>cors()</code>, <code>helmet()</code></span></div><div class="step"><span class="step-num">3</span><span>Estrutura: <code>src/routes/</code>, <code>src/controllers/</code>, <code>src/middleware/</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w14-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">CRUD Completo</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>CRUD de usuários: <code>GET /users</code>, <code>GET /users/:id</code>, <code>POST /users</code>, <code>PUT /users/:id</code>, <code>DELETE /users/:id</code></span></div><div class="step"><span class="step-num">2</span><span>Dados em memória (array) por enquanto — DB na próxima semana</span></div><div class="step"><span class="step-num">3</span><span>Teste com Thunder Client ou Postman</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w14-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Error Handling</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Error middleware: <code>app.use((err, req, res, next) => {...})</code></span></div><div class="step"><span class="step-num">2</span><span>Classe <code>AppError</code> com <code>statusCode</code> e <code>message</code></span></div><div class="step"><span class="step-num">3</span><span>Wrapper <code>asyncHandler</code> para eliminar try/catch repetitivo em controllers</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w14-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Validação &amp; Env Vars</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Valide request body com Zod: <code>const schema = z.object({...}); schema.parse(req.body)</code></span></div><div class="step"><span class="step-num">2</span><span><code>.env</code>: <code>PORT=3000</code>, <code>NODE_ENV=development</code>. Nunca commite o <code>.env</code></span></div><div class="step"><span class="step-num">3</span><span>Adicione <code>.env</code> no <code>.gitignore</code>. Crie <code>.env.example</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w14-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — API de Produtos</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>API REST com products, categories. CRUD completo com validação.</span></div><div class="step"><span class="step-num">2</span><span>Filtros: <code>GET /products?category=tech&minPrice=100</code></span></div><div class="step"><span class="step-num">3</span><span>Documentação no README. Deploy no Railway ou Render (free tier).</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w13')">← Semana 13</button><button class="nav-btn primary" onclick="goTo('w15')">Semana 15 →</button></div>
+</div>
+
+<!-- SEMANA 15 -->
+<div class="page" id="page-w15">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 4</div><h1>Semana 15 — PostgreSQL + Prisma ORM</h1><p class="subtitle">Banco de dados relacional é fundamento de qualquer sistema sério. Prisma é o ORM mais popular no ecossistema Node.js/TypeScript.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w15-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">SQL Essencial</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code> — os 4 fundamentos</span></div><div class="step"><span class="step-num">2</span><span><code>WHERE</code>, <code>ORDER BY</code>, <code>LIMIT</code>, <code>JOIN</code> (INNER, LEFT)</span></div><div class="step"><span class="step-num">3</span><span>Crie conta no Neon.tech e conecte via psql ou TablePlus</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w15-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Prisma Setup</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install prisma @prisma/client</code> → <code>npx prisma init</code></span></div><div class="step"><span class="step-num">2</span><span>Schema: <code>model User { id Int @id @default(autoincrement()) email String @unique }</code></span></div><div class="step"><span class="step-num">3</span><span><code>npx prisma migrate dev --name init</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w15-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">CRUD com Prisma Client</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>prisma.user.create()</code>, <code>findMany()</code>, <code>findUnique()</code>, <code>update()</code>, <code>delete()</code></span></div><div class="step"><span class="step-num">2</span><span>Filtros: <code>where: { email: { contains: '@gmail' } }</code></span></div><div class="step"><span class="step-num">3</span><span>Substitua o array em memória da API da Semana 14 pelo Prisma</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w15-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Relacionamentos</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>1:N — <code>User</code> tem muitos <code>Post</code>s</span></div><div class="step"><span class="step-num">2</span><span>N:N — <code>Post</code> tem muitas <code>Tag</code>s</span></div><div class="step"><span class="step-num">3</span><span>Include relacionamentos: <code>prisma.user.findMany({ include: { posts: true } })</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w15-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Prisma Studio + Seed</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npx prisma studio</code> — GUI visual do banco</span></div><div class="step"><span class="step-num">2</span><span>Crie <code>prisma/seed.ts</code> com dados de exemplo. <code>npx prisma db seed</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w15-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">API com DB Real</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Migre a API de Produtos para usar PostgreSQL + Prisma</span></div><div class="step"><span class="step-num">2</span><span>Adicione paginação: <code>?page=1&limit=10</code> com <code>skip</code> e <code>take</code> do Prisma</span></div><div class="step"><span class="step-num">3</span><span>Deploy com Neon.tech (DB) + Railway/Render (API)</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w14')">← Semana 14</button><button class="nav-btn primary" onclick="goTo('w16')">Semana 16 →</button></div>
+</div>
+<!-- SEMANA 16 -->
+<div class="page" id="page-w16">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 4</div><h1>Semana 16 — Autenticação JWT</h1><p class="subtitle">Segurança é responsabilidade do dev. Hash de senhas, JWT, refresh tokens e rotas protegidas.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w16-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Como JWT funciona</div><div class="lesson-tags"><span class="tag tag-blue">header.payload.sig</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Decodifique um token em jwt.io — veja header, payload, signature</span></div><div class="step"><span class="step-num">2</span><span>JWT NÃO é criptografado — apenas assinado. Nunca coloque senha no payload!</span></div><div class="step"><span class="step-num">3</span><span>Access token: curto (15min). Refresh token: longo (7 dias) e armazenado no DB</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w16-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">bcrypt + Hash de Senhas</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install bcryptjs</code></span></div><div class="step"><span class="step-num">2</span><span>Hash: <code>const hash = await bcrypt.hash(password, 12)</code></span></div><div class="step"><span class="step-num">3</span><span>Compare: <code>const isValid = await bcrypt.compare(password, hash)</code></span></div><div class="step"><span class="step-num">4</span><span>Nunca armazene senha em plain text. Use sempre salt rounds ≥ 10.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w16-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Register &amp; Login</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>POST /auth/register</code>: valide email, hash senha, salve user, retorne JWT</span></div><div class="step"><span class="step-num">2</span><span><code>POST /auth/login</code>: busque user, compare senha, gere access + refresh token</span></div><div class="step"><span class="step-num">3</span><span><code>npm install jsonwebtoken</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w16-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Auth Middleware</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Middleware verifica <code>Authorization: Bearer &lt;token&gt;</code></span></div><div class="step"><span class="step-num">2</span><span><code>jwt.verify(token, secret)</code> → decodifica e adiciona user em <code>req.user</code></span></div><div class="step"><span class="step-num">3</span><span>Aplique em rotas protegidas: <code>router.get('/profile', authenticate, controller)</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w16-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Refresh Token</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Armazene refresh tokens no DB (tabela <code>RefreshToken</code>)</span></div><div class="step"><span class="step-num">2</span><span><code>POST /auth/refresh</code>: valide refresh token, emita novo access token</span></div><div class="step"><span class="step-num">3</span><span><code>POST /auth/logout</code>: invalide refresh token no DB</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w16-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Sistema de Auth Completo</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Integre auth na API de Produtos: somente admin pode criar/editar/deletar</span></div><div class="step"><span class="step-num">2</span><span>Role-based: <code>middleware checkRole(['ADMIN'])</code></span></div><div class="step"><span class="step-num">3</span><span>Teste fluxo completo: register → login → acessar rota protegida → refresh → logout</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w15')">← Semana 15</button><button class="nav-btn primary" onclick="goTo('w17')">Semana 17 →</button></div>
+</div>
+
+<!-- SEMANA 17 -->
+<div class="page" id="page-w17">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 5</div><h1>Semana 17 — Frontend ↔ Backend</h1><p class="subtitle">Conecte o React ao Express. Axios, React Query e gerenciamento de tokens no frontend.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w17-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Axios + Interceptors</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install axios</code>. Crie instância: <code>const api = axios.create({ baseURL: '...' })</code></span></div><div class="step"><span class="step-num">2</span><span>Request interceptor: adicione JWT header automaticamente em todas as requisições</span></div><div class="step"><span class="step-num">3</span><span>Response interceptor: se 401, tente refresh token → retry request</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w17-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">TanStack Query</div><div class="lesson-tags"><span class="tag tag-blue">useQuery</span><span class="tag tag-blue">useMutation</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install @tanstack/react-query</code></span></div><div class="step"><span class="step-num">2</span><span><code>useQuery({ queryKey: ['users'], queryFn: fetchUsers })</code> → dados, loading, error</span></div><div class="step"><span class="step-num">3</span><span><code>useMutation</code> para POST/PUT/DELETE com <code>onSuccess</code> invalidando queries</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w17-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Auth no Frontend</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Armazene access token em memória (variável, não localStorage) para maior segurança</span></div><div class="step"><span class="step-num">2</span><span>Refresh token em httpOnly cookie (mais seguro que localStorage)</span></div><div class="step"><span class="step-num">3</span><span>AuthContext com <code>user</code>, <code>login()</code>, <code>logout()</code>, <code>isAuthenticated</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w17-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">CORS &amp; Proxy</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Backend: <code>cors({ origin: 'http://localhost:5173', credentials: true })</code></span></div><div class="step"><span class="step-num">2</span><span>Dev proxy no Vite: <code>server: { proxy: { '/api': 'http://localhost:3000' } }</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w17-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Optimistic Updates</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Atualize a UI imediatamente, depois confirme com o servidor</span></div><div class="step"><span class="step-num">2</span><span>Rollback se a requisição falhar</span></div><div class="step"><span class="step-num">3</span><span>TanStack Query tem suporte nativo: <code>onMutate</code>, <code>onError</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w17-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">App Full-Stack Funcionando</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Frontend React (Vercel) + Backend Express (Railway) + DB PostgreSQL (Neon)</span></div><div class="step"><span class="step-num">2</span><span>Fluxo completo: register, login, CRUD de produtos, logout</span></div><div class="step"><span class="step-num">3</span><span>Este é seu primeiro app full-stack em produção!</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w16')">← Semana 16</button><button class="nav-btn primary" onclick="goTo('w18')">Semana 18 →</button></div>
+</div>
+
+<!-- SEMANA 18 -->
+<div class="page" id="page-w18">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 5</div><h1>Semana 18 — Clean Code</h1><p class="subtitle">Código limpo não é luxo — é profissionalismo. SOLID, DRY, KISS. Recrutadores canadenses fazem code review durante a entrevista técnica.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w18-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Naming &amp; Functions</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Nomes descritivos: <code>getUserById</code> não <code>getU</code>. <code>isEmailValid</code> não <code>checkEmail</code></span></div><div class="step"><span class="step-num">2</span><span>Funções pequenas: ≤ 20 linhas, UMA responsabilidade</span></div><div class="step"><span class="step-num">3</span><span>Evite comentários óbvios. Se o código precisa de comentário é porque não é claro o suficiente</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w18-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">SOLID Principles</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><strong>S</strong>ingle Responsibility: classe/função faz UMA coisa</span></div><div class="step"><span class="step-num">2</span><span><strong>O</strong>pen/Closed: aberto para extensão, fechado para modificação</span></div><div class="step"><span class="step-num">3</span><span><strong>D</strong>ependency Inversion: dependa de abstrações, não de implementações</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w18-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">DRY, KISS, YAGNI</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><strong>DRY</strong> — Don't Repeat Yourself: extraia lógica duplicada em funções/hooks</span></div><div class="step"><span class="step-num">2</span><span><strong>KISS</strong> — Keep It Simple: a solução mais simples que funciona é a certa</span></div><div class="step"><span class="step-num">3</span><span><strong>YAGNI</strong> — You Aren't Gonna Need It: não construa features que ninguém pediu</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w18-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Refatoração Prática</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Escolha um arquivo do seu projeto e refatore aplicando os princípios</span></div><div class="step"><span class="step-num">2</span><span>Técnicas: Extract function, Rename variable, Remove duplication, Early return</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w18-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Code Review Checklist</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Checklist: Funcionamento, Legibilidade, Performance, Segurança, Testes</span></div><div class="step"><span class="step-num">2</span><span>Configure ESLint + Prettier no projeto. Zero warnings antes do commit.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w18-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Refatore um Projeto Anterior</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Escolha um dos projetos das semanas 14–17 e aplique tudo desta semana</span></div><div class="step"><span class="step-num">2</span><span>PR (Pull Request) de refatoração com descrição clara das mudanças</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w17')">← Semana 17</button><button class="nav-btn primary" onclick="goTo('w19')">Semana 19 →</button></div>
+</div>
+<!-- SEMANA 19 -->
+<div class="page" id="page-w19">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 5</div><h1>Semana 19 — Testes</h1><p class="subtitle">Jest, React Testing Library e Supertest. Código não testado é código quebrado. Empresa gringa exige testes.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w19-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Unit Testing com Jest</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install --save-dev jest @types/jest ts-jest</code></span></div><div class="step"><span class="step-num">2</span><span>Teste funções puras: <code>describe()</code>, <code>it()</code>, <code>expect().toBe()</code></span></div><div class="step"><span class="step-num">3</span><span>Escreva 100% de coverage para um arquivo <code>utils.js</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w19-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Mocks &amp; Spies</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>jest.fn()</code> e <code>jest.spyOn()</code> para mockar dependências (ex: API calls)</span></div><div class="step"><span class="step-num">2</span><span>Teste funções que chamam APIs sem fazer a requisição real</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w19-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Testing React Components</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install --save-dev @testing-library/react @testing-library/jest-dom</code></span></div><div class="step"><span class="step-num">2</span><span>Teste de renderização: componente renderiza com as props corretas?</span></div><div class="step"><span class="step-num">3</span><span>Teste de interação: <code>fireEvent.click()</code> e verifique se callback foi chamado</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w19-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Testing API Routes</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install --save-dev supertest</code></span></div><div class="step"><span class="step-num">2</span><span>Testes E2E na API: <code>request(app).get('/users').expect(200)</code></span></div><div class="step"><span class="step-num">3</span><span>Mock DB com db em memória durante testes</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w19-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">TDD Básico</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Red-Green-Refactor: escreva teste falhando, implemente, refatore</span></div><div class="step"><span class="step-num">2</span><span>Resolva um problema do HackerRank usando TDD</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w19-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Testes nos Projetos</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Adicione testes aos projetos anteriores (API de Produtos e Frontend)</span></div><div class="step"><span class="step-num">2</span><span>Configure GitHub Actions para rodar testes a cada push (CI básico)</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w18')">← Semana 18</button><button class="nav-btn primary" onclick="goTo('w20')">Semana 20 →</button></div>
+</div>
+
+<!-- SEMANA 20 -->
+<div class="page" id="page-w20">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 5</div><h1>Semana 20 — MongoDB + Redis</h1><p class="subtitle">NoSQL e Caching. Nem todo dado cabe no modelo relacional. Redis é essencial para performance em alta escala.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w20-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">MongoDB Basics</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Conceitos: Database, Collection, Document. Diferenças com SQL.</span></div><div class="step"><span class="step-num">2</span><span>Crie conta no MongoDB Atlas (free tier) e pegue a string de conexão</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w20-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Mongoose</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><code>npm install mongoose</code></span></div><div class="step"><span class="step-num">2</span><span>Defina schema: <code>const UserSchema = new mongoose.Schema({...})</code></span></div><div class="step"><span class="step-num">3</span><span>CRUD básico usando Mongoose Models</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w20-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Redis Setup</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Cache key-value in-memory. Crie conta no Upstash (Redis serverless).</span></div><div class="step"><span class="step-num">2</span><span><code>npm install ioredis</code></span></div><div class="step"><span class="step-num">3</span><span><code>SET key value EX 3600</code> (expira em 1 hora)</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w20-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Caching API Responses</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Middlewares de cache: verifique Redis primeiro, se não achar, busque DB</span></div><div class="step"><span class="step-num">2</span><span>Implemente cache na rota <code>GET /products</code> (com TTL)</span></div><div class="step"><span class="step-num">3</span><span>Invalidação de cache: limpe Redis no POST/PUT/DELETE</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w20-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Rate Limiting com Redis</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Impeça abuso da API: max 100 requests / min / IP</span></div><div class="step"><span class="step-num">2</span><span>Redis increment (INCR) key expirável</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w20-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — URL Shortener</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie encurtador: DB (Mongo) guarda hash/URL original</span></div><div class="step"><span class="step-num">2</span><span>Redis cachea URLs populares (hot URLs) + Rate Limit no POST</span></div><div class="step"><span class="step-num">3</span><span>Deploy: Vercel (Front) + Railway (API) + Atlas (Mongo) + Upstash (Redis)</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w19')">← Semana 19</button><button class="nav-btn primary" onclick="goTo('w21')">Semana 21 →</button></div>
+</div>
+
+<!-- SEMANA 21 A 24 -->
+<div class="page" id="page-w21">
+  <div class="page-header"><div class="phase-badge badge-yellow">🟡 Fase 2 · Mês 6</div><h1>Semanas 21–24 — Projeto TaskFlow 🚀</h1><p class="subtitle">Seu primeiro projeto complexo do portfólio. Um clone do Trello ou Jira com funcionalidades reais. Este projeto comprova sua Fase 2 (Full-Stack).</p></div>
+  <div class="success-box"><strong>🎉 Fim do Mês 6 chegando!</strong> Metade do programa. Este projeto será a principal âncora do seu CV para as primeiras entrevistas exploratórias.</div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Fase</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w21-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S21</div></div></td><td><div class="day-content"><div class="lesson-title">Arquitetura &amp; Setup</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Repo monorepo: frontend (Next.js), backend (Express)</span></div><div class="step"><span class="step-num">2</span><span>DB Schema: User, Workspace, Board, List, Card, Comment</span></div><div class="step"><span class="step-num">3</span><span>Configuração Auth, DB e CI básico</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w21-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S22</div></div></td><td><div class="day-content"><div class="lesson-title">Backend &amp; API</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Desenvolva rotas de CRUD completo para Boards, Lists e Cards</span></div><div class="step"><span class="step-num">2</span><span>Validações e error handling testados</span></div><div class="step"><span class="step-num">3</span><span>(Bônus) Integração de Drag and Drop: ordenação no backend via order_index</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w21-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S23</div></div></td><td><div class="day-content"><div class="lesson-title">Frontend &amp; UI</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Construa a interface inspirada no Trello (TailwindCSS recomendado)</span></div><div class="step"><span class="step-num">2</span><span>Integre API com React Query</span></div><div class="step"><span class="step-num">3</span><span>Implemente Drag &amp; Drop no React (ex: dnd-kit ou react-beautiful-dnd)</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w21-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S24</div></div></td><td><div class="day-content"><div class="lesson-title">Refinamento &amp; Deploy</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Otimização: implemente optimistic updates no DnD</span></div><div class="step"><span class="step-num">2</span><span>Deploy: Vercel (Front) + Render/Railway (Back) + DB remoto</span></div><div class="step"><span class="step-num">3</span><span>Finalize o README com GIFs detalhando uso e arquitetura</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w20')">← Semana 20</button><button class="nav-btn primary" onclick="goTo('w25')">Fase 3: Semana 25 →</button></div>
+</div>
+<!-- SEMANA 25 -->
+<div class="page" id="page-w25">
+  <div class="page-header"><div class="phase-badge badge-red">🔴 Fase 3 · Mês 7</div><h1>Semana 25 — Docker Básico</h1><p class="subtitle">O padrão da indústria para deployment. Aprenda a rodar sua aplicação de forma consistente em qualquer máquina.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w25-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Conceitos Básicos</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Instale Docker Desktop. Imagem vs Container.</span></div><div class="step"><span class="step-num">2</span><span>Rodando imagens prontas: <code>docker run -p 8080:80 nginx</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w25-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Dockerfile</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie um <code>Dockerfile</code> para a API Node.js (semana 14)</span></div><div class="step"><span class="step-num">2</span><span>Build: <code>docker build -t my-api .</code></span></div><div class="step"><span class="step-num">3</span><span>Run: <code>docker run -p 3000:3000 my-api</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w25-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Volumes &amp; Networks</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Volumes para persistência de dados (útil para DBs)</span></div><div class="step"><span class="step-num">2</span><span>Redes: conectando o container da API ao container do Postgres</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w25-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Docker Compose</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Escreva <code>docker-compose.yml</code>: API + Postgres + Redis</span></div><div class="step"><span class="step-num">2</span><span>Suba todo ambiente com <code>docker-compose up -d</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w25-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Otimização de Imagens</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Multi-stage builds para reduzir o tamanho da imagem final</span></div><div class="step"><span class="step-num">2</span><span>Adicione um arquivo <code>.dockerignore</code> (ignorar node_modules e .env)</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w25-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Dockerize seus Projetos</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Dockerize o Frontend e Backend do projeto TaskFlow</span></div><div class="step"><span class="step-num">2</span><span>Faça o push das imagens para o DockerHub</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w21')">← Semana 21-24</button><button class="nav-btn primary" onclick="goTo('w26')">Semana 26 →</button></div>
+</div>
+
+<!-- SEMANA 26 -->
+<div class="page" id="page-w26">
+  <div class="page-header"><div class="phase-badge badge-red">🔴 Fase 3 · Mês 7</div><h1>Semana 26 — CI/CD &amp; GitHub Actions</h1><p class="subtitle">A automação do ciclo de vida do software é essencial para ser considerado Sênior/Pleno avançado.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w26-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Fundamentos CI/CD</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Diferença entre Integração Contínua (CI) e Deploy Contínuo (CD)</span></div><div class="step"><span class="step-num">2</span><span>Crie o primeiro workflow em <code>.github/workflows/main.yml</code></span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w26-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">CI: Linters &amp; Tests</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Pipeline que roda ESLint em todo PR</span></div><div class="step"><span class="step-num">2</span><span>Bloquear merge caso os testes do Jest falhem</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w26-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Gerenciando Segredos</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Armazene chaves de API nos GitHub Secrets</span></div><div class="step"><span class="step-num">2</span><span>Acesse <code>${{ secrets.API_KEY }}</code> no workflow</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w26-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">CD: Deploy Automático</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Configure a Vercel para auto-deploy no merge na main</span></div><div class="step"><span class="step-num">2</span><span>Integre com Railway/Render via GitHub Actions</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w26-5')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">5</div></div></td><td><div class="day-content"><div class="lesson-title">Publicando Docker Image</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Pipeline que roda <code>docker build</code> e <code>docker push</code></span></div><div class="step"><span class="step-num">2</span><span>Publicar no DockerHub a cada nova Release tag no GitHub</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w26-6')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">6</div></div></td><td><div class="day-content"><div class="lesson-title">Projeto — CI/CD Pipeline</div><div class="lesson-tags"><span class="tag tag-green">Projeto</span></div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Adicione CI/CD robusto ao projeto TaskFlow</span></div><div class="step"><span class="step-num">2</span><span>O README do projeto agora deve ter os "badges" de Status passando (build passing)</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w25')">← Semana 25</button><button class="nav-btn primary" onclick="goTo('w27')">Semana 27 →</button></div>
+</div>
+
+<!-- SEMANA 27 e 28 -->
+<div class="page" id="page-w27">
+  <div class="page-header"><div class="phase-badge badge-red">🔴 Fase 3 · Mês 7</div><h1>Semanas 27–28 — Introdução a Nuvem (AWS)</h1><p class="subtitle">Conhecimento cloud é o grande diferencial de salários mais altos.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Fase</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w27-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S27</div></div></td><td><div class="day-content"><div class="lesson-title">S3 &amp; EC2 Basics</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie conta Free Tier AWS. Configure IAM User (nunca use Root).</span></div><div class="step"><span class="step-num">2</span><span>S3: Armazene imagens com o AWS SDK (ex: upload de foto de perfil)</span></div><div class="step"><span class="step-num">3</span><span>EC2: Suba uma máquina Linux, instale Docker e rode a API manualmente.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w27-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S28</div></div></td><td><div class="day-content"><div class="lesson-title">Serverless (Lambda)</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Aprenda o conceito de Serverless (FaaS)</span></div><div class="step"><span class="step-num">2</span><span>Crie uma Lambda Function simples e ative via API Gateway</span></div><div class="step"><span class="step-num">3</span><span>Projeto: Integre upload S3 via API Gateway e Lambda</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w26')">← Semana 26</button><button class="nav-btn primary" onclick="goTo('w29')">Semana 29 →</button></div>
+</div>
+<!-- SEMANA 29 e 30 -->
+<div class="page" id="page-w29">
+  <div class="page-header"><div class="phase-badge badge-red">🔴 Fase 3 · Mês 8</div><h1>Semanas 29–30 — Integração de IA (OpenAI)</h1><p class="subtitle">Em 2026, empresas querem desenvolvedores que saibam construir produtos com IA integrada.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Fase</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w29-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S29</div></div></td><td><div class="day-content"><div class="lesson-title">OpenAI API Basics</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Gere API Key na OpenAI e use <code>npm install openai</code></span></div><div class="step"><span class="step-num">2</span><span>Prompt Engineering básico (System Prompt vs User Prompt)</span></div><div class="step"><span class="step-num">3</span><span>Projeto: Crie um bot CLI no Node.js</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w29-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S30</div></div></td><td><div class="day-content"><div class="lesson-title">Integração Prática</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Trabalhando com JSON mode (retornando objetos estruturados)</span></div><div class="step"><span class="step-num">2</span><span>Projeto: Integre a API da OpenAI no seu projeto TaskFlow (ex: botão "Auto-gerar subtarefas" para um Card)</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w27')">← Semana 27-28</button><button class="nav-btn primary" onclick="goTo('w31')">Semana 31 →</button></div>
+</div>
+
+<!-- SEMANA 31 e 32 -->
+<div class="page" id="page-w31">
+  <div class="page-header"><div class="phase-badge badge-red">🔴 Fase 3 · Mês 8</div><h1>Semanas 31–32 — GraphQL</h1><p class="subtitle">Muitas empresas modernas no Canadá usam GraphQL para economizar banda e aumentar a flexibilidade no Frontend.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Fase</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w31-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S31</div></div></td><td><div class="day-content"><div class="lesson-title">Fundamentos GraphQL</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>REST vs GraphQL. Queries vs Mutations.</span></div><div class="step"><span class="step-num">2</span><span>Configurando Apollo Server no Express (backend). Resolvers e Typedefs.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w31-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S32</div></div></td><td><div class="day-content"><div class="lesson-title">GraphQL + React</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Apollo Client no Frontend (React/Next.js)</span></div><div class="step"><span class="step-num">2</span><span><code>useQuery</code> e <code>useMutation</code> usando a API GraphQL.</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w29')">← Semana 29-30</button><button class="nav-btn primary" onclick="goTo('w33')">Semana 33 →</button></div>
+</div>
+
+<!-- SEMANA 33 a 36 -->
+<div class="page" id="page-w33">
+  <div class="page-header"><div class="phase-badge badge-red">🔴 Fase 3 · Mês 9</div><h1>Semanas 33–36 — Projeto HireAI 🚀</h1><p class="subtitle">O "Showpiece" (Obra-prima) do seu Portfólio. Um projeto que demonstra domínio de tudo visto na Fase 3: Docker, AWS, CI/CD e IA.</p></div>
+  <div class="success-box"><strong>🎉 Fim do Mês 9!</strong> Com este projeto no seu GitHub, seu valor de mercado já é extremamente alto. As próximas fases são focadas puramente em conseguir a vaga.</div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Fase</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w33-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S33</div></div></td><td><div class="day-content"><div class="lesson-title">Planejamento &amp; Arquitetura</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span><strong>A Ideia</strong>: Plataforma de análise de Currículos com IA que compara CVs a descrições de vagas.</span></div><div class="step"><span class="step-num">2</span><span>Crie os diagramas de banco de dados e fluxos de uso.</span></div><div class="step"><span class="step-num">3</span><span>Configure o repositório, Docker, Lint e CI/CD.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w33-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S34</div></div></td><td><div class="day-content"><div class="lesson-title">Backend, AWS S3 e OpenAI</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Construa a API e a Autenticação.</span></div><div class="step"><span class="step-num">2</span><span>Faça upload de PDFs de Currículos para o AWS S3.</span></div><div class="step"><span class="step-num">3</span><span>Integre a OpenAI para ler o texto do PDF e retornar as pontuações e feedbacks formatados.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w33-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S35</div></div></td><td><div class="day-content"><div class="lesson-title">Frontend React/Next.js</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Interface polida, moderna, de preferência em dark mode. Uso pesado de TailwindCSS.</span></div><div class="step"><span class="step-num">2</span><span>Painéis intuitivos para os "Recrutadores" verem as métricas de análise da IA.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w33-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S36</div></div></td><td><div class="day-content"><div class="lesson-title">Testes Finais &amp; Deploy</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Testes (Jest, Supertest).</span></div><div class="step"><span class="step-num">2</span><span>Deploy das imagens Docker via CI/CD.</span></div><div class="step"><span class="step-num">3</span><span>Coloque este projeto como o item principal no seu portfólio desenvolvido na Semana 12!</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w31')">← Semana 31-32</button><button class="nav-btn primary" onclick="goTo('w37')">Fase 4: Semana 37 →</button></div>
+</div>
+<!-- SEMANA 37 a 40 -->
+<div class="page" id="page-w37">
+  <div class="page-header"><div class="phase-badge badge-blue">🔵 Fase 4 · Mês 10</div><h1>Semanas 37–40 — Data Structures &amp; Algorithms (DSA)</h1><p class="subtitle">Muitas empresas no Canadá aplicam testes de LeetCode/HackerRank nas entrevistas iniciais. Não seja pego de surpresa.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Fase</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w37-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S37</div></div></td><td><div class="day-content"><div class="lesson-title">Big O Notation &amp; Arrays</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Entenda Complexidade de Tempo e Espaço: O(1), O(n), O(n²), O(log n).</span></div><div class="step"><span class="step-num">2</span><span>Problemas clássicos: "Two Sum", "Best Time to Buy and Sell Stock".</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w37-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S38</div></div></td><td><div class="day-content"><div class="lesson-title">Strings, Hash Maps e Two Pointers</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Aprenda o uso e performance do Hash Map (Dicionários/Objetos em JS).</span></div><div class="step"><span class="step-num">2</span><span>Problemas clássicos: "Valid Palindrome", "Valid Anagram", "Longest Substring".</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w37-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S39</div></div></td><td><div class="day-content"><div class="lesson-title">Linked Lists, Stacks &amp; Queues</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Como implementar uma Lista Encadeada e Pilhas/Filas no JavaScript.</span></div><div class="step"><span class="step-num">2</span><span>Problemas clássicos: "Reverse Linked List", "Valid Parentheses".</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w37-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S40</div></div></td><td><div class="day-content"><div class="lesson-title">Trees &amp; System Design Básico</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Conceitos de Árvores Binárias (DFS e BFS).</span></div><div class="step"><span class="step-num">2</span><span>Problemas clássicos: "Maximum Depth of Binary Tree", "Invert Binary Tree".</span></div><div class="step"><span class="step-num">3</span><span>Noções Básicas de System Design (Load Balancers, Microserviços vs Monolito, Horizontal Scaling).</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w33')">← Semana 33-36</button><button class="nav-btn primary" onclick="goTo('w41')">Semana 41 →</button></div>
+</div>
+
+<!-- SEMANA 41 a 44 -->
+<div class="page" id="page-w41">
+  <div class="page-header"><div class="phase-badge badge-blue">🔵 Fase 4 · Mês 11</div><h1>Semanas 41–44 — O Mercado de Trabalho Canadense</h1><p class="subtitle">Neste mês você prepara todo o seu "Arsenal de Busca". CV canadense, LinkedIn internacional e Networking Estratégico.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Fase</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w41-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S41</div></div></td><td><div class="day-content"><div class="lesson-title">Resume Padrão Canadense</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Nada de foto ou idade. 1 a 2 páginas (máximo).</span></div><div class="step"><span class="step-num">2</span><span>Escreva os "Bullets" com base na metodologia STAR (Situation, Task, Action, Result) medindo impacto real.</span></div><div class="step"><span class="step-num">3</span><span>Peça para nativos ou ferramentas de IA (Grammarly/ChatGPT) corrigirem e adaptarem para Business English.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w41-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S42</div></div></td><td><div class="day-content"><div class="lesson-title">LinkedIn Otimizado</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Traduza o Perfil inteiro para Inglês e marque a localização. Se tiver autorização de trabalho avise na Bio.</span></div><div class="step"><span class="step-num">2</span><span>Título descritivo: "Full Stack Engineer | React, Node, AWS".</span></div><div class="step"><span class="step-num">3</span><span>Ative o recurso de Open to Work com foco em cidades no Canadá (Toronto, Vancouver).</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w41-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S43</div></div></td><td><div class="day-content"><div class="lesson-title">Cover Letter &amp; Cold Email</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Aprenda a redigir uma "Cover Letter" customizada (muitas vagas pedem).</span></div><div class="step"><span class="step-num">2</span><span>Crie templates de "Cold Email" para abordar Recruiters Tech.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w41-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S44</div></div></td><td><div class="day-content"><div class="lesson-title">Plataformas de Vagas</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Configure alertas de vagas em: LinkedIn, Indeed Canada, Glassdoor, VanHack, AngelList (Wellfound).</span></div><div class="step"><span class="step-num">2</span><span>Inicie sua rotina diária (Aplicar para pelo menos 5 vagas todos os dias).</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w37')">← Semana 37-40</button><button class="nav-btn primary" onclick="goTo('w45')">Semana 45 →</button></div>
+</div>
+
+<!-- SEMANA 45 a 48 -->
+<div class="page" id="page-w45">
+  <div class="page-header"><div class="phase-badge badge-blue">🔵 Fase 4 · Mês 12</div><h1>Semanas 45–48 — Entrevistas &amp; Contratação 🎉</h1><p class="subtitle">Este é o sprint final. O foco absoluto é mandar bem nas Behavioral e Technical Interviews e garantir a vaga.</p></div>
+  <table class="lesson-table"><thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Fase</th><th>O que fazer</th></tr></thead><tbody>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w45-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S45</div></div></td><td><div class="day-content"><div class="lesson-title">The Behavioral Interview</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Aprenda a responder "Tell me about yourself" em inglês (Pitch de Elevador - 2 min).</span></div><div class="step"><span class="step-num">2</span><span>Pratique o método STAR para as perguntas comuns (Ex: "Fale de um conflito técnico").</span></div><div class="step"><span class="step-num">3</span><span>Pratique com um parceiro ou grave a si mesmo falando.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w45-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S46</div></div></td><td><div class="day-content"><div class="lesson-title">The Technical Interview</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Mock Interviews: Use plataformas online para simular (ex: Pramp).</span></div><div class="step"><span class="step-num">2</span><span>Aprenda a "pensar em voz alta" durante o teste técnico (Comunicação é chave, não apenas resolver).</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w45-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S47</div></div></td><td><div class="day-content"><div class="lesson-title">Take-Home Assignments</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Para empresas que mandam teste para casa, escreva testes e use Typescript sempre.</span></div><div class="step"><span class="step-num">2</span><span>Mostre Boas Práticas e Clean Code nos envios.</span></div></div></div></td></tr>
+    <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w45-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">S48</div></div></td><td><div class="day-content"><div class="lesson-title">Negociação e Emigração</div></div></td><td><div class="day-content"><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Aprenda a negociar salário e Equity/Benefits.</span></div><div class="step"><span class="step-num">2</span><span>Pesquise sobre Vistos. Se não tiver PR, as empresas geralmente suportam processo via Global Talent Stream (LMIA).</span></div><div class="step"><span class="step-num">3</span><span>Aceite a oferta, prepare as malas, comemore sua vitória rumo ao Canadá! 🇨🇦✈️</span></div></div></div></td></tr>
+  </tbody></table>
+  <div class="success-box"><strong>🚀 VOCÊ CONSEGUIU!</strong> O RoadMap de 1 ano foi concluído.</div>
+  <div class="page-nav"><button class="nav-btn" onclick="goTo('w41')">← Semana 41-44</button><button class="nav-btn" onclick="logout()">Sair / Finalizar</button></div>
+</div>
+
+</div> <!-- main-content END -->
+</div> <!-- layout-wrapper END -->
+
+<script>
+// --- CORE LOGIC ---
+const STATE_KEY = 'dsmsys_roadmap_state';
+const AUTH_KEY = 'dsmsys_auth_user';
+
+let state = {
+  activePage: 'home',
+  checkedLessons: []
+};
+
+function doLogin() {
+  const user = document.getElementById('login-user').value;
+  const pass = document.getElementById('login-pass').value;
+  
+  if(user === 'dsmsys' && pass === 'dsm@2026') {
+    sessionStorage.setItem(AUTH_KEY, 'true');
+    document.getElementById('login-overlay').style.display = 'none';
+    initApp();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem(AUTH_KEY);
+  location.reload();
+}
+
+function initApp() {
+  const isAuth = sessionStorage.getItem(AUTH_KEY);
+  if(!isAuth) {
+    document.getElementById('login-overlay').style.display = 'flex';
+    return;
+  } else {
+    document.getElementById('login-overlay').style.display = 'none';
+  }
+
+  const savedState = localStorage.getItem(STATE_KEY);
+  if(savedState) {
+    try {
+      state = JSON.parse(savedState);
+    } catch(e){}
+  }
+  
+  // Apply saved checks
+  state.checkedLessons.forEach(id => {
+    const btn = document.querySelector(`.check-btn[onclick="toggleCheck(this,'${id}')"]`);
+    if(btn) btn.classList.add('checked');
+  });
+  
+  // Go to active page
+  goTo(state.activePage);
+  updateProgress();
+}
+
+function goTo(pageId) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Remove active from all sidebar links
+  document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+  
+  // Show target page
+  const page = document.getElementById('page-' + pageId);
+  if(page) page.classList.add('active');
+  else {
+    // fallback to home
+    document.getElementById('page-home').classList.add('active');
+    pageId = 'home';
+  }
+  
+  // Highlight sidebar link
+  const link = document.querySelector(`.sidebar-menu a[href="#"][onclick="goTo('${pageId}')"]`);
+  if(link) link.classList.add('active');
+  
+  state.activePage = pageId;
+  saveState();
+  window.scrollTo(0,0);
+}
+
+function toggleCheck(btn, lessonId) {
+  const isChecked = btn.classList.toggle('checked');
+  
+  if(isChecked) {
+    if(!state.checkedLessons.includes(lessonId)) {
+      state.checkedLessons.push(lessonId);
+    }
+  } else {
+    state.checkedLessons = state.checkedLessons.filter(id => id !== lessonId);
+  }
+  
+  saveState();
+  updateProgress();
+}
+
+function saveState() {
+  localStorage.setItem(STATE_KEY, JSON.stringify(state));
+}
+
+function updateProgress() {
+  const total = document.querySelectorAll('.check-btn').length;
+  const completed = state.checkedLessons.length;
+  
+  const text = `${completed} / ${total} aulas completas`;
+  
+  const pText = document.getElementById('progress-text');
+  if(pText) pText.innerText = text;
+  
+  const pFill = document.getElementById('progress-fill');
+  if(pFill) {
+    const percent = total > 0 ? (completed / total) * 100 : 0;
+    pFill.style.width = percent + '%';
+  }
+}
+
+// Check auth on load
+window.addEventListener('DOMContentLoaded', () => {
+  initApp();
+});
+</script>
+
+</body>
+</html>
