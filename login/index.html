@@ -160,7 +160,7 @@
 
     // Se já estiver logado, redireciona direto
     if (sessionStorage.getItem(AUTH_KEY)) {
-      window.location.href = '/docs/curso%20dev%20-foco%20mercado%20canadence.html';
+      window.location.href = '/docs/curso-canadense.html';
     }
 
     document.getElementById('login-form').addEventListener('submit', function(e) {
@@ -174,7 +174,7 @@
         errorEl.style.display = 'none';
         sessionStorage.setItem(AUTH_KEY, 'true');
         // Redireciona para o curso após o login
-        window.location.href = '/docs/curso%20dev%20-foco%20mercado%20canadence.html';
+        window.location.href = '/docs/curso-canadense.html';
       } else {
         errorEl.style.display = 'block';
       }
