@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -846,31 +846,16 @@ let state = {
   checkedLessons: []
 };
 
-function doLogin() {
-  const user = document.getElementById('login-user').value;
-  const pass = document.getElementById('login-pass').value;
-  
-  if(user === 'dsmsys' && pass === 'dsm@2026') {
-    sessionStorage.setItem(AUTH_KEY, 'true');
-    document.getElementById('login-overlay').style.display = 'none';
-    initApp();
-  } else {
-    document.getElementById('login-error').style.display = 'block';
-  }
-}
-
 function logout() {
   sessionStorage.removeItem(AUTH_KEY);
-  location.reload();
+  window.location.href = '/login';
 }
 
 function initApp() {
   const isAuth = sessionStorage.getItem(AUTH_KEY);
   if(!isAuth) {
-    document.getElementById('login-overlay').style.display = 'flex';
+    window.location.href = '/login';
     return;
-  } else {
-    document.getElementById('login-overlay').style.display = 'none';
   }
 
   const savedState = localStorage.getItem(STATE_KEY);
