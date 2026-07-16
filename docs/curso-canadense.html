@@ -213,6 +213,14 @@
   ::-webkit-scrollbar-track { background: var(--surface); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
   @media (max-width: 900px) { #sidebar { display: none; } #main { padding: 24px 16px; } .home-grid, .setup-grid { grid-template-columns: 1fr; } }
+  .lesson-material { margin-top: 16px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .lesson-material summary { cursor: pointer; font-weight: 600; color: var(--accent); user-select: none; }
+  .lesson-material summary:hover { text-decoration: underline; }
+  .material-content { margin-top: 12px; font-size: 13px; line-height: 1.6; color: var(--text); }
+  .material-content pre { background: #000; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 12px 0; border: 1px solid #333; }
+  .material-content code { font-family: 'Consolas', monospace; color: #56b6c2; }
+  .material-content h3 { margin-top: 24px; margin-bottom: 8px; font-size: 15px; color: #fff; }
+  .material-content p { margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -359,7 +367,166 @@
   <table class="lesson-table">
     <thead><tr><th style="width:42px">✓</th><th style="width:50px">Dia</th><th style="width:200px">Aula</th><th>O que fazer</th></tr></thead>
     <tbody>
-      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Variáveis &amp; Tipos</div><div class="lesson-tags"><span class="tag tag-blue">let</span><span class="tag tag-blue">const</span><span class="tag tag-blue">typeof</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Diferença entre <code>var</code>, <code>let</code> e <code>const</code>. Por que nunca usar <code>var</code> em código moderno.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Declare variáveis com <code>let</code> e <code>const</code>. Tente reatribuir uma <code>const</code> — veja o erro.</span></div><div class="step"><span class="step-num">2</span><span>Teste os 7 tipos primitivos: <code>string</code>, <code>number</code>, <code>boolean</code>, <code>null</code>, <code>undefined</code>, <code>symbol</code>, <code>bigint</code></span></div><div class="step"><span class="step-num">3</span><span>Use <code>typeof</code> em cada variável. Por que <code>typeof null === 'object'</code>? (bug histórico do JS)</span></div><div class="step"><span class="step-num">4</span><span>Template literals: <code>`Hello, ${name}! You are ${age} years old.`</code></span></div></div></div></td></tr>
+      <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-1')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">1</div></div></td><td><div class="day-content"><div class="lesson-title">Variáveis &amp; Tipos</div><div class="lesson-tags"><span class="tag tag-blue">let</span><span class="tag tag-blue">const</span><span class="tag tag-blue">typeof</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Diferença entre <code>var</code>, <code>let</code> e <code>const</code>. Por que nunca usar <code>var</code> em código moderno.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Declare variáveis com <code>let</code> e <code>const</code>. Tente reatribuir uma <code>const</code> — veja o erro.</span></div><div class="step"><span class="step-num">2</span><span>Teste os 7 tipos primitivos: <code>string</code>, <code>number</code>, <code>boolean</code>, <code>null</code>, <code>undefined</code>, <code>symbol</code>, <code>bigint</code></span></div><div class="step"><span class="step-num">3</span><span>Use <code>typeof</code> em cada variável. Por que <code>typeof null === 'object'</code>? (bug histórico do JS)</span></div><div class="step"><span class="step-num">4</span><span>Template literals: <code>`Hello, ${name}! You are ${age} years old.`</code></span></div></div>
+      <details class="lesson-material"><summary>📄 Ver Material Completo (Dia 1)</summary><div class="material-content">
+        <p><em>💡 <strong>Recomendação de Terminal:</strong> O ideal é rodar estes códigos diretamente no <strong>VS Code</strong>. Ele possui um terminal integrado (atalho: <code>Ctrl + `</code> ou <code>Ctrl + J</code>) onde você pode rodar o comando <code>node arquivo.js</code> sem precisar sair da sua tela de código. Fica muito mais produtivo!</em></p>
+        
+        <h3>PASSO 1 — Crie o arquivo</h3>
+        <p>Abra o terminal do VS Code e rode:</p>
+        <pre><code>mkdir -p semana1 && cd semana1
+code dia1.js</code></pre>
+        
+        <h3>PASSO 2 — var vs let vs const</h3>
+        <p>Cole este bloco e leia cada comentário antes de rodar:</p>
+        <pre><code>// ─── VAR (NUNCA USE — só para entender por que é ruim) ────────────────
+var oldName = 'Samuel'
+var oldName = 'Carlos'   // ← reatribui SEM ERRO. Isso é um bug silencioso.
+console.log(oldName)     // 'Carlos' — perigoso em projetos grandes
+
+// var tem escopo de FUNÇÃO, não de bloco
+if (true) {
+  var leakedVar = 'vazei!'
+}
+console.log(leakedVar)   // 'vazei!' ← existe fora do bloco. PROBLEMA.
+
+// ─── LET (use quando o valor VAI mudar) ───────────────────────────────
+let score = 0
+score = 10               // ✅ reatribuição permitida
+score = score + 5        // ✅ também válido
+console.log(score)       // 15
+
+// let tem escopo de BLOCO ✅
+if (true) {
+  let blockScoped = 'só existo aqui'
+  console.log(blockScoped) // ✅ funciona dentro do bloco
+}
+// console.log(blockScoped) // ❌ ReferenceError — não existe aqui fora
+
+// ─── CONST (use por padrão — só mude para let se precisar reatribuir) ─
+const MAX_RETRIES = 3
+// MAX_RETRIES = 5         // ❌ TypeError: Assignment to constant variable
+console.log(MAX_RETRIES)
+
+// ATENÇÃO: const não congela objetos e arrays, só o BINDING
+const user = { name: 'Samuel', age: 28 }
+user.age = 29             // ✅ mudar propriedade é permitido
+// user = { name: 'outro' } // ❌ reatribuir a variável não é permitido
+console.log(user)
+
+const fruits = ['apple', 'banana']
+fruits.push('mango')      // ✅ mutar o array é permitido
+// fruits = []             // ❌ reatribuir não é permitido
+console.log(fruits)</code></pre>
+        <p>Rode no terminal:</p>
+        <pre><code>node dia1.js</code></pre>
+        <p><strong>Regra de ouro:</strong> Use <code>const</code> por padrão. Troque para <code>let</code> só se você sabe que o valor vai mudar. Nunca use <code>var</code>.</p>
+        
+        <h3>PASSO 3 — Os 7 Tipos Primitivos</h3>
+        <pre><code>// ─── 1. STRING ────────────────────────────────────────────────────────
+const firstName = 'Samuel'           // aspas simples
+const lastName  = "Melo"             // aspas duplas — igual
+const city      = `Belo Horizonte`   // backtick — para templates
+
+// ─── 2. NUMBER ────────────────────────────────────────────────────────
+const age        = 28                // inteiro
+const price      = 19.99             // float
+const negative   = -5
+const result     = 10 / 3            // 3.3333...
+const infinity   = 1 / 0             // Infinity
+const notANumber = 'abc' / 2         // NaN — Not a Number (mas é do tipo number!)
+
+console.log(notANumber)              // NaN
+console.log(typeof notANumber)       // 'number' ← sim, NaN é um number
+
+// ─── 3. BOOLEAN ───────────────────────────────────────────────────────
+const isLoggedIn   = true
+const hasPermission = false
+const isAdult      = age >= 18       // expressão → true
+
+// ─── 4. NULL ──────────────────────────────────────────────────────────
+// null = ausência INTENCIONAL de valor (você define como null de propósito)
+const selectedItem = null            // ainda não há item selecionado
+
+// ─── 5. UNDEFINED ─────────────────────────────────────────────────────
+// undefined = ausência NÃO intencional (JS atribui quando não há valor)
+let pendingValue                     // declarada mas não inicializada
+console.log(pendingValue)            // undefined
+
+function greet(name) {
+  console.log(name)                  // undefined se chamada sem argumento
+}
+greet()
+
+// ─── 6. SYMBOL ────────────────────────────────────────────────────────
+// Valor único e imutável. Usado para chaves únicas de objetos.
+const id1 = Symbol('id')
+const id2 = Symbol('id')
+console.log(id1 === id2)             // false — cada Symbol é sempre único
+
+// ─── 7. BIGINT ────────────────────────────────────────────────────────
+// Para números MAIORES que Number.MAX_SAFE_INTEGER (2^53 - 1)
+const bigNumber   = 9007199254740991n    // note o 'n' no final
+const biggerNumber = bigNumber + 1n
+console.log(biggerNumber)
+
+// const err = bigNumber + 1          // ❌ TypeError
+const ok = bigNumber + BigInt(1)      // ✅</code></pre>
+        
+        <h3>PASSO 4 — typeof: inspecionando tipos em runtime</h3>
+        <pre><code>console.log(typeof 'hello')          // 'string'
+console.log(typeof 42)               // 'number'
+console.log(typeof true)             // 'boolean'
+console.log(typeof undefined)        // 'undefined'
+console.log(typeof Symbol())         // 'symbol'
+console.log(typeof 123n)             // 'bigint'
+console.log(typeof function(){})     // 'function'
+console.log(typeof {})               // 'object'
+console.log(typeof [])               // 'object'  ← array é objeto!
+
+// 🐛 O BUG HISTÓRICO: typeof null === 'object'
+console.log(typeof null)             // 'object'  ← ERRADO. Bug desde 1995.
+
+// COMO CHECAR NULL corretamente:
+const value = null
+console.log(value === null)          // ✅ true — use isso
+
+// COMO checar se é um array:
+const list = [1, 2, 3]
+console.log(typeof list)             // 'object'  ← não ajuda
+console.log(Array.isArray(list))     // ✅ true  — use isso</code></pre>
+        
+        <h3>PASSO 5 — Template Literals</h3>
+        <pre><code>const name   = 'Samuel'
+const age    = 28
+const course = 'JavaScript'
+
+// ─── Agora (template literal — limpo e legível) ───────────────────────
+const greeting = `Hello, ${name}! You are ${age} years old.`
+console.log(greeting)
+
+// Qualquer EXPRESSÃO JS funciona dentro de ${}
+console.log(`Next year you will be ${age + 1} years old.`)
+console.log(`Are you an adult? ${age >= 18 ? 'Yes' : 'No'}`)
+
+// ─── Gerando HTML dinamicamente ───
+const product = { name: 'Keyboard', price: 349.90, inStock: true }
+const productCard = `
+  <div class="product-card">
+    <h2>${product.name}</h2>
+    <p>Price: R$ ${product.price.toFixed(2)}</p>
+    <span class="badge ${product.inStock ? 'in-stock' : 'out-of-stock'}">
+      ${product.inStock ? '✅ In Stock' : '❌ Out of Stock'}
+    </span>
+  </div>
+`
+console.log(productCard)</code></pre>
+
+        <h3>PASSO 6 — Exercício Final</h3>
+        <pre><code>// 1. Declare uma const chamada PI com valor 3.14159 e tente reatribuir
+// 2. Qual é o typeof de: NaN, null, [], undefined, function(){}
+// 3. Crie um objeto user com name e age, e depois altere a age.
+// 4. Gere uma string com template literal usando o objeto user.</code></pre>
+      </div></details></div></td></tr>
       <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-2')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">2</div></div></td><td><div class="day-content"><div class="lesson-title">Condicionais</div><div class="lesson-tags"><span class="tag tag-blue">if/else</span><span class="tag tag-blue">switch</span><span class="tag tag-blue">ternário</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Controle de fluxo. Aparece em todo algoritmo de entrevista.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Escreva uma função <code>getGrade(score)</code> que retorna "A", "B", "C", "D" ou "F"</span></div><div class="step"><span class="step-num">2</span><span>Reescreva usando <code>switch</code>. Quando usar if vs switch?</span></div><div class="step"><span class="step-num">3</span><span>Ternário: <code>const result = score >= 60 ? 'Pass' : 'Fail'</code></span></div><div class="step"><span class="step-num">4</span><span>Entenda truthy/falsy: <code>0</code>, <code>""</code>, <code>null</code>, <code>undefined</code>, <code>NaN</code> são falsy</span></div></div></div></td></tr>
       <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-3')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">3</div></div></td><td><div class="day-content"><div class="lesson-title">Funções</div><div class="lesson-tags"><span class="tag tag-blue">function</span><span class="tag tag-blue">return</span><span class="tag tag-blue">scope</span></div></div></td><td><div class="day-content"><div class="lesson-desc">Declaração, parâmetros, retorno e escopo.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Crie 5 funções: <code>add(a,b)</code>, <code>isEven(n)</code>, <code>greet(name)</code>, <code>celsiusToFahrenheit(c)</code>, <code>maxOfThree(a,b,c)</code></span></div><div class="step"><span class="step-num">2</span><span>Entenda escopo: variável declarada dentro da função não existe fora. Teste isso.</span></div><div class="step"><span class="step-num">3</span><span>Toda função deve ter um propósito claro e nome descritivo em inglês</span></div></div></div></td></tr>
       <tr><td><div class="day-check"><button class="check-btn" onclick="toggleCheck(this,'w1-4')">✓</button></div></td><td><div class="day-num-cell"><div class="day-num">4</div></div></td><td><div class="day-content"><div class="lesson-title">Arrow Functions</div><div class="lesson-tags"><span class="tag tag-blue">const fn = () =></span></div></div></td><td><div class="day-content"><div class="lesson-desc">Sintaxe mais curta. É a forma padrão usada em React e Node.js modernos.</div><div class="lesson-steps"><div class="step"><span class="step-num">1</span><span>Sintaxe básica: <code>const add = (a, b) => a + b</code> — retorno implícito</span></div><div class="step"><span class="step-num">2</span><span>Com corpo: <code>const greet = (name) => { const msg = `Hello, ${name}`; return msg }</code></span></div><div class="step"><span class="step-num">3</span><span>Reescreva todas as 5 funções do dia 3 usando arrow functions</span></div></div></div></td></tr>
